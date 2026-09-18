@@ -1,0 +1,60 @@
+name: vision_face
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: vision_face_postgres
+    ports:
+      - "5432:5432" 
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+      # o volume é necessário para que os dados do banco de dados persistam mesmo que o container seja destruído.
+      - postgres_data:/var/lib/postgresql/data
+      # o arquivo init.sql é necessário para criar a extensão pgvector no banco de dados.
+      # este arquivo é executado apenas na primeira vez que o container é iniciado, garantindo que a extensão seja criada antes do backend tentar se conectar ao banco de dados.
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+    # verifica se o banco de dados está pronto para receber conexões, evitando que o backend tente se conectar antes do banco estar pronto.
+    # caso o banco não seja inicializado com sucesso depois das tentativas, o container será marcado como unhealthy e o backend não será iniciado.
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    # o restart: unless-stopped é necessário para que o container do postgres seja reiniciado automaticamente caso ele falhe ou seja parado, garantindo que o backend sempre tenha acesso ao banco de dados.
+    restart: unless-stopped
+
+  backend:
+    container_name: vision_face_backend
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+
+    # o env file é necessário para o flask acessar as variaveis de ambiente quando rodado localmente, porém quando for rodado no servidor, as variaveis de ambiente serão passadas diretamente pelo servidor não tendo um arquivo .env
+    # assim quando não for rodado no servidor será necessário criar um arquivo .env com as variaveis de ambiente corretas, já quando for rodado no servidor, as variaveis de ambiente serão passadas diretamente pelo servidor não tendo um arquivo .env
+    env_file:
+    - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      SECURITY_PASSWORD_SALT: ${SECURITY_PASSWORD_SALT}
+      BACKEND_IP: ${BACKEND_IP}
+      BACKEND_PORT: ${BACKEND_PORT}
+      ENV: ${ENV}
+      FLASK_APP: ${FLASK_APP}
+    ports:
+    # PORTA EXTERNA:PORTA_INTERNA, a porta interna é a porta que o backend está escutando, e a porta externa é a porta que será exposta para o host.
+      - "${BACKEND_PORT}:8000"
+    depends_on:
+      postgres:
+      # o backend depende do postgres estar saudável antes de iniciar, para evitar erros de conexão com o banco de dados.
+        condition: service_healthy
+    restart: unless-stopped
+
+# volumes são usados para persistir dados entre reinicializações do container. No caso do postgres, é necessário para que os dados do banco de dados não sejam perdidos quando o container for destruído.
+volumes:
+  postgres_data:

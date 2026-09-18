@@ -1,0 +1,33 @@
+{% extends 'base_home.html' %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{url_for('.static', filename = 'styles/index.css')}}">
+{% endblock %}
+
+{% block navbar %}
+{% include 'navbar_home.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="hero-box">
+    <div class="hero-content">
+        <p class="hero-title">My Model Flask</p>
+        <p class="hero-description">Para informações sobre do que se trata este modelo e detalhes sobre a sua contrução
+            no backend,
+            verificar na página de documentação através do menu de navegação localizado no topo da página ou pelo botão
+            logo abaixo.
+        </p>
+        <a class="hero-docs" href="{{url_for('web.home.docs')}}">Go to Docs</a>
+    </div>
+    <div class="hero-image">
+        <img src="{{url_for('web.static', filename = 'images/flask_icon_4.png')}}">
+        <img src="{{url_for('web.static', filename = 'images/python_icon.svg')}}">
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{url_for('.static', filename = 'scripts/index.js')}}"></script>
+{% endblock %}

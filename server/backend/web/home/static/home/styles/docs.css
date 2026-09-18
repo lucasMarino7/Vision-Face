@@ -1,0 +1,98 @@
+.docs-box {
+    display: flex;
+}
+
+.docs-nav {
+    position: sticky;
+    top: 134px;
+    width: 200px;
+    align-self: flex-start;
+    flex: 0 0 auto;
+}
+
+.docs-content {
+    padding-left: 1.5rem !important;
+    padding-right: 48px;
+}
+
+.docs-title h1 {
+    text-align: center;
+    font-size: 40px;
+    font-weight: 700;
+    margin-bottom: 30px;
+}
+
+.questions-title {
+    color: #FEBE10;
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.role-title {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.nav-sumary {
+    color: #fff !important;
+    font-weight: 700;
+}
+
+.nav-sumary:not(.active):hover {
+    color: #FEBE10 !important;
+}
+
+.nav-sumary.active {
+    color: #251762 !important;
+    background-color: #FEBE10 !important;
+}
+
+#about-structure li {
+    list-style-type: none;
+    color: #e5d5a8;
+}
+
+#about-structure li span {
+    margin-left: 20px;
+}
+
+#about-structure .structure-folder-content {
+    border-left: 1px solid #ffffff47;
+}
+
+#about-structure .structure-folder-content .details-folder-content {
+    padding: 5px 5px 5px 10px;
+    background-color: #3218a7;
+    border-left: 4px solid #fff;
+    border-radius: 0.375rem;
+    text-align: justify;
+}
+
+#about-structure .structure-folder-content .details-folder-content span {
+    color: #cdc9df;
+}
+
+
+
+#about-structure .structure-folder .name-folder {
+    display: inline-block;
+    color: #FEBE10;
+}
+
+#about-structure .structure-folder:not(.no-iterable) .name-folder {
+    cursor: pointer;
+}
+
+#about-structure .structure-folder img {
+    height: 10px;
+    filter: invert(1);
+    transition: 1s;
+}
+
+#about-structure .structure-folder:not(.no-iterable) img {
+    transform: rotate(90deg);
+}
+
+.rotate-arrow {
+    transform: rotate(0deg) !important;
+}

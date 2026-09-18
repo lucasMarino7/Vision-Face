@@ -1,0 +1,57 @@
+{% extends 'base_auth.html' %}
+
+{% block title %}Blog Login{% endblock %}
+
+{% block content %}
+<div class="box-cover">
+    <div class="cover-head">
+        <a href="{{url_for('web.home.index')}}">
+            <img src="{{url_for('web.static', filename = 'images/flask_icon_1.png')}}" height="48">
+            Model Flask
+        </a>
+        <span> / Blog Reviews</span>
+    </div>
+    <h1 class="cover-title">Welcome Back</h1>
+    <p class="cover-description"> Faça o login com seu endereço de e-mail e senha. Que bom ver você aqui!</p>
+</div>
+<div class="box-form">
+    <div class="content-form">
+        <div class="nav-form">
+            <a class="active" href="{{url_for('web.auth.login')}}">Login</a>
+            <a href="{{url_for('web.auth.signup')}}">Sign up</a>
+        </div>
+        <form action="{{ url_for('web.auth.login') }}" method="post" class="needs-validation">
+            {{ login_form.csrf_token }}
+            <fieldset>
+                {% for field in login_form %}
+                {% if field != login_form.csrf_token and field != login_form.submit %}
+                <div class="mb-3">
+                    {{ field.label(class="form-control-label") }}
+
+                    {% if field.errors %}
+                    {{ field(class="form-control is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for erro in field.errors %}
+                        {{ erro }}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    {{ field(class="form-control") }}
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endfor %}
+                <div class="box-submit">{{ login_form.submit(class="btn btn-submit") }}</div>
+            </fieldset>
+        </form>
+        <div class="box-redirect text-center">
+            <span>Already a user? <a class="a-redirect" href="{{url_for('.signup')}}">Sign
+                    Up</a></span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{url_for('.static', filename = 'scripts/login.js')}}"></script>
+{% endblock %}

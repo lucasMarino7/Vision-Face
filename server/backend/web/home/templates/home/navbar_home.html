@@ -1,0 +1,34 @@
+<header class="navbar-box navbar-page">
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <div class="navbar-brand-box">
+                <a class="navbar-brand" href="{{url_for('web.home.index')}}">
+                    <img src="{{url_for('web.static', filename = 'images/flask_icon_1.png')}}" height="48">
+                    Vision Face</a>
+            </div>
+            <div class="navbar-nav-box">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link index-link" href="{{url_for('web.home.index')}}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link docs-link" href="{{url_for('web.home.docs')}}">Docs</a>
+                    </li>
+                </ul>
+
+                <div class="navbar-blog">
+                    <img src="{{url_for('web.static', filename = 'images/blog_icon.png')}}" height="24">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link login-link" href="{{url_for('api.health_check')}}">API Status</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link signup-link" href="{{url_for('web.home.docs')}}">Documentação</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </nav>
+</header>

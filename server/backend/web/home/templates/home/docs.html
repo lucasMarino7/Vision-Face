@@ -1,0 +1,432 @@
+{% extends 'base_home.html' %}
+
+{% block title %}Docs{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{url_for('.static', filename = 'styles/docs.css')}}">
+{% endblock %}
+
+{% block navbar %}
+{% include 'navbar_home.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="docs-box">
+    <div class="docs-nav">
+        <nav id="navbar-example3" class="h-100 flex-column align-items-stretch pe-4 border-end">
+            <nav class="nav nav-pills flex-column">
+                <a class="nav-link nav-sumary" href="#about-model">Sobre o modelo</a>
+                <a class="nav-link nav-sumary" href="#about-role-user">Sobre os niveis/roles dos usuários</a>
+                <nav class="nav nav-pills flex-column">
+                    <a class="nav-link nav-sumary ms-3 my-1" href="#role-client-content">Client</a>
+                    <a class="nav-link nav-sumary ms-3 my-1" href="#role-admin-content">Admin</a>
+                    <a class="nav-link nav-sumary ms-3 my-1" href="#role-super-admin-content">Super Admin</a>
+                </nav>
+                <a class="nav-link nav-sumary" href="#about-apis-rest">Sobre as APIS REST</a>
+                <a class="nav-link nav-sumary" href="#about-structure">Sobre a Estrutura do backend</a>
+            </nav>
+        </nav>
+    </div>
+
+    <div class="docs-content">
+        <div data-bs-spy="scroll" data-bs-target="#navbar-example3" data-bs-smooth-scroll="true"
+            class="scrollspy-example-2" tabindex="0">
+            <div id="about-model">
+                <h2 class="questions-title">Sobre o modelo</h2>
+                <p>Este Modelo flask tem alta capacidade de escalonar o projeto, a estrtura dos diretórios no backend
+                    foram basendo nas apis de documentação oficial do flask e do flask-restx, porém qualquer atualização
+                    em que se achar necessário, deve-se alterar no backend, para que mantenha este modelo sempre
+                    atualizado ao mercado e esteja o mais profissional possível.
+                    Para fins didáticos e de melhor entendimento da estrutura e das funções utilizadas no backend,
+                    foi
+                    utilizado
+                    um simples exemplo de blog sobre resenhas de filmes e livros.<br>
+                    Nela os usuários podem fazer suas
+                    postagens de resenhas sobre filmes que assistiram ou de livros em que leram, tendo a possibilidade
+                    de
+                    permitir a visualização pública de suas postagens, ou se preferir, permitir apenas para a sua
+                    própria
+                    visualização.<br>
+                    E para um melhor gerenciamento dos usuários e da aplicação, podem ser criados usuário
+                    administradores, contendo
+                    privilégios sobre os demais usuários e recursos a mais da aplicação.<br>
+                    O modelo também inclui um API REST, totalmente documentada pelo swagger e protegida por
+                    authenticação, onde apenas usuários com niveis/roles administradores tem acesso sobre esse recurso.
+                </p>
+            </div>
+            <div id="about-role-user">
+                <h2 class="questions-title">Sobre os niveis/roles dos usuários</h2>
+                <p>No blog há três niveis/roles de usuários: </p>
+            </div>
+            <div id="role-client-content">
+                <h3 class="role-title">Client</h3>
+                <p>Os Clients são os usuário clientes da aplicação, onde não possuem nenhum nivel admintrativo e
+                    autorização de acesso as APIS,
+                    porém podem gerenciar suas próprias postagens e seus dados de cadastro na aplicação.</p>
+                <p>Sobre acesso e controle à API: Nenhum privilégio</p>
+                <p>Sobre os usuários clientes: Nenhum privilégio</p>
+                <p>Sobre os usuários administradores: Nenhum privilégio</p>
+                <p>Sobre o usuário super administrador: Nenhum privilégio</p>
+            </div>
+            <div id="role-admin-content">
+                <h3 class="role-title">Admin</h3>
+                <p>Os Admins são os usuáios administradores da aplicação, onde tem o objetivo de gerenciar os
+                    usuários
+                    clientes, podendo ser capazes de:</p>
+                <p>Sobre acesso e controle à API: </p>
+                <ul>
+                    <li>Possuem acesso à documentação swagger</li>
+                    <li>Tem acesso a todos métodos REST sobre as APIS de livros, filmes e usuários</li>
+                    <li>Tem acesso apenas ao método REST 'GET' sobre a API de niveis/roles de usuários</li>
+                </ul>
+                <p>Sobre os usuários clientes: </p>
+                <ul>
+                    <li>editar e excluir postagens</li>
+                    <li>editar dados de cadastro</li>
+                    <li>ativar/inativar a conta (inativar a conta do usuário, não exclui a mesma, apenas não permite
+                        que
+                        ele consiga iniciar
+                        uma
+                        sessão novamente com a mesma conta)</li>
+                    <li>excluir sua conta</li>
+                </ul>
+                <p>Sobre os usuários administradores: Nenhum privilégio</p>
+                <p>Sobre o usuário super administrador: Nenhum privilégio</p>
+            </div>
+            <div id="role-super-admin-content">
+                <h3 class="role-title" s>Super Admin</h3>
+                <p>O Super Admin há apenas um na aplicação, tendo o maior nivel administrador, podendo ser capaz de:
+                </p>
+                <p>Sobre acesso e controle à API: </p>
+                <ul>
+                    <li>Possuem acesso à documentação swagger</li>
+                    <li>Tem acesso a todos métodos REST sobre a API de livros, filmes e usuários</li>
+                    <li>Tem acesso a todos métodos REST sobre a API de niveis/roles de usuários</li>
+                </ul>
+                <p>Sobre os usuários clientes: </p>
+                <ul>
+                    <li>editar e excluir postagens</li>
+                    <li>editar dados de cadastro</li>
+                    <li>ativar/inativar a conta (inativar a conta do usuários, não exclui a mesma, apenas não permite
+                        que
+                        ele consiga iniciar
+                        uma
+                        sessão novamente com a mesma conta)</li>
+                    <li>excluir sua conta</li>
+                </ul>
+                <p>Sobre os usuários administradores: </p>
+                <ul>
+                    <li>editar e excluir postagens</li>
+                    <li>editar dados de cadastro</li>
+                    <li>ativar/inativar a conta (inativar a conta do usuários, não exclui a mesma, apenas não permite
+                        que
+                        ele consiga iniciar
+                        uma
+                        sessão novamente com a mesma conta)</li>
+                    <li>excluir sua conta</li>
+                </ul>
+            </div>
+            <div id="about-apis-rest">
+                <h3 class="role-title">Sobre as APIS REST</h3>
+                <p>Para um melhor nível de organização, as APIS REST está totalmente isoladas dos routes da
+                    web.<br>
+                    São documentadas pelo swagger, protegidas por authenticação JWT e possuem modelos de entrada de
+                    dados que auxiliam o usuário a ter o melhor aproveito das apis.<br>
+                    Todos seus routes incluem o sistema CRUD.<br>
+                    E para um melhor manuseio delas, elas foram divididas em:<br>
+                <ul>
+                    <li>Uma API para livros <p>*Isso ainda vai mudar, para API para resenhas</p>
+                    </li>
+                    <li>Uma API para filmes <p>*Isso ainda vai mudar, para API para resenhas</p>
+                    </li>
+                    <li>Uma API para os usuarios <p>Onde contém todos os usuários cadastrados na aplicação, e dentro
+                            dela contém um subAPI para os niveis/roles dos usuários.</p>
+                    </li>
+                </ul>
+                </p>
+            </div>
+            <div id="about-structure">
+                <h3 class="role-title">Sobre a Estrutura do backend</h3>
+                <p>A Estrutura do backend foi baseada em exemplos oficiais das APIS do flask e flask-resxt, ela foi
+                    dividido da seguinte forma:
+                <ul>
+                    <li class="structure-folder">
+                        <div class="name-folder"><img
+                                src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}"> src </div>
+                        <span>(Diretório
+                            principal
+                            do projeto)</span>
+                    </li>
+                    <ul class="structure-folder-content">
+                        <li class="structure-folder">
+                            <div class="name-folder"><img
+                                    src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}"> apis
+                            </div>
+                            <span>(Diretório separado da web, onde contém todas as funcionalidas e routes das
+                                apis)</span>
+                        </li>
+                        <ul class="structure-folder-content">
+                            <li>__init__.py <span>(inicialização da api, onde irá criar um blueprint separado somente
+                                    para a api, importar e adicionar as namespaces filhos a ela)</span></li>
+                            <li>namespace 1.py <span>(namespace 1 filho da api)</span></li>
+                            <li>namespace 2.py <span>(namespace 2 filho da api)</span></li>
+                            <li>...</li>
+                            <li>namespace N.py <span>(namespace N filho da api)</span></li>
+                        </ul>
+                        <li class="structure-folder">
+                            <div class="name-folder"><img
+                                    src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}"> models
+                            </div>
+                            <span>(Diretório models, onde conterá todas as tabelas sqlalchemy)</span>
+                        </li>
+                        <ul class="structure-folder-content">
+                            <li>model 1.py</li>
+                            <li>model 2.py
+                            </li>
+                            <li>...</li>
+                            <li>model 3.py
+                            </li>
+                        </ul>
+                        <li class="structure-folder">
+                            <div class="name-folder"><img
+                                    src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}"> schemas
+                            </div>
+                            <span>(Diretório schemas, onde conterá os schemas marshmallow)</span>
+                        </li>
+                        <ul class="structure-folder-content">
+                            <li>schema 1.py</li>
+                            <li>schema 2.py</li>
+                            <li>...</li>
+                            <li>schema 3.py</li>
+                        </ul>
+                        <li class="structure-folder">
+                            <div class="name-folder"><img
+                                    src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}"> server
+                            </div>
+                            <span>(Diretório server, responsável por criar, configurar e instanciar toda a
+                                aplicação)</span>
+                        </li>
+                        <ul class="structure-folder-content">
+                            <li>app_factory.py <span>(inicializa/cria o objeto flask (fábrica do flask))</span></li>
+                            <li>config.py <span>(configura a aplicação conforme seu modo (Produção, Depuração e
+                                    teste))</span></li>
+                            <li>extensions.py <span>(instancia todas as extenções da aplicação)</span></li>
+                            <li>instance.py <span>(instancia e rodar a aplicação)</span></li>
+                        </ul>
+                        <li class="structure-folder">
+                            <div class="name-folder"><img
+                                    src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}"> web</div>
+                            <span>(Diretório web ou core, separado da api, onde conterá todas as funcionalidas e routes
+                                da
+                                web)</span>
+                        </li>
+                        <ul class="structure-folder-content">
+                            <li class="structure-folder">
+                                <div class="name-folder"><img
+                                        src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}"> forms
+                                </div>
+                                <span>(conterá os forms/formulários que serão utilizados nos routes)</span>
+                            </li>
+                            <ul class="structure-folder-content">
+                                <li>form 1.py</li>
+                                <li>form 2.py</li>
+                                <li>...</li>
+                                <li>form 3.py</li>
+                            </ul>
+                            <li class="structure-folder">
+                                <div class="name-folder"><img
+                                        src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                    static
+                                </div>
+                                <span>(conterá arquivos css, js e imagens que serão utilizados nos routes)</span>
+                            </li>
+                            <ul class="structure-folder-content">
+                                <li class="structure-folder">
+                                    <div class="name-folder"><img
+                                            src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                        images</div>
+                                </li>
+                                <ul class="structure-folder-content">
+                                    <li>img-1.png</li>
+                                    <li>img-2.png</li>
+                                    <li>...</li>
+                                    <li>img-N.png</li>
+                                </ul>
+                                <li class="structure-folder">
+                                    <div class="name-folder"><img
+                                            src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                        scripts</div>
+                                    <span>(Os arquivos js de uso específicos de cada blueprint fazerão parte de seus
+                                        respectivos
+                                        diretórios
+                                        cujo nome é o mesmo da blueprint, e aqueles arquivos que são de uso geral são
+                                        deixadas na raiz do diretório)</span>
+                                </li>
+                                <ul class="structure-folder-content">
+                                    <li class="structure-folder">
+                                        <div class="name-folder"><img
+                                                src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                            blueprint 1</div>
+                                        <span>(arquivos js de uso específico da blueprint 1)</span>
+                                    </li>
+                                    <ul class="structure-folder-content">
+                                        <li>blueprint-1-script-1.js</li>
+                                        <li>blueprint-1-script-2.js</li>
+                                        <li>...</li>
+                                        <li>blueprint-1-script-N.js</li>
+                                    </ul>
+                                    <li class="structure-folder">
+                                        <div class="name-folder"><img
+                                                src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                            blueprint 2</div>
+                                        <span>(arquivos js de uso específico da blueprint 2)</span>
+                                    </li>
+                                    <ul class="structure-folder-content">
+                                        <li>blueprint-2-script-1.js</li>
+                                        <li>blueprint-2-script-2.js</li>
+                                        <li>...</li>
+                                        <li>blueprint-2-script-N.js</li>
+                                    </ul>
+                                    <li>...</li>
+                                    <li class="structure-folder">
+                                        <div class="name-folder"><img
+                                                src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                            blueprint N</div>
+                                        <span>(arquivos js de uso específico da blueprint N)</span>
+                                    </li>
+                                    <ul class="structure-folder-content">
+                                        <li>blueprint-N-script-1.js</li>
+                                        <li>blueprint-N-script-2.js</li>
+                                        <li>...</li>
+                                        <li>blueprint-N-script-N.js</li>
+                                    </ul>
+                                    <li>base.js <span>(arquivo js de uso geral para todas as blueprints)</span></li>
+                                </ul>
+                                <li class="structure-folder">
+                                    <div class="name-folder"><img
+                                            src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                        styles</div>
+                                    <span>(Mesmo intuito de organização da pasta scripts)</span>
+                                </li>
+                                <ul class="structure-folder-content">
+                                    <li class="structure-folder">
+                                        <div class="name-folder"><img
+                                                src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                            blueprint 1</div>
+                                    </li>
+                                    <ul class="structure-folder-content">
+                                        <li>blueprint-1-style-1.css</li>
+                                        <li>blueprint-1-style-2.css</li>
+                                        <li>...</li>
+                                        <li>blueprint-1-style-N.css</li>
+                                    </ul>
+                                    <li class="structure-folder">
+                                        <div class="name-folder"><img
+                                                src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                            blueprint 2</div>
+                                    </li>
+                                    <ul class="structure-folder-content">
+                                        <li>blueprint-2-style-1.css</li>
+                                        <li>blueprint-2-style-2.css</li>
+                                        <li>...</li>
+                                        <li>blueprint-2-style-N.css</li>
+                                    </ul>
+                                    <li>...</li>
+                                    <li class="structure-folder">
+                                        <div class="name-folder"><img
+                                                src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                            blueprint N</div>
+                                    </li>
+                                    <ul class="structure-folder-content">
+                                        <li>blueprint-N-style-1.css</li>
+                                        <li>blueprint-N-style-2.css</li>
+                                        <li>...</li>
+                                        <li>blueprint-N-style-N.css</li>
+                                    </ul>
+                                    <li>base.css</li>
+                                </ul>
+                            </ul>
+                            <li class="structure-folder">
+                                <div class="name-folder"><img
+                                        src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                    templates</div>
+                                <span>(Mesmo intuito de organização da pasta scripts)</span>
+                            </li>
+                            <ul class="structure-folder-content">
+                                <li class="structure-folder">
+                                    <div class="name-folder"><img
+                                            src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                        blueprint 1</div>
+                                </li>
+                                <ul class="structure-folder-content">
+                                    <li>blueprint-1-template-1.html</li>
+                                    <li>blueprint-1-template-2.html</li>
+                                    <li>...</li>
+                                    <li>blueprint-1-template-N.html</li>
+                                </ul>
+                                <li class="structure-folder">
+                                    <div class="name-folder"><img
+                                            src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                        blueprint 2</div>
+                                </li>
+                                <ul class="structure-folder-content">
+                                    <li>blueprint-2-template-1.html</li>
+                                    <li>blueprint-2-template-2.html</li>
+                                    <li>...</li>
+                                    <li>blueprint-2-template-N.html</li>
+                                </ul>
+                                <li>...</li>
+                                <li class="structure-folder">
+                                    <div class="name-folder"><img
+                                            src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}">
+                                        blueprint N</div>
+                                </li>
+                                <ul class="structure-folder-content">
+                                    <li>blueprint-N-template-1.html</li>
+                                    <li>blueprint-N-template-2.html</li>
+                                    <li>...</li>
+                                    <li>blueprint-N-template-N.html</li>
+                                </ul>
+                                <li>base.html</li>
+                            </ul>
+                            <li class="structure-folder">
+                                <div class="name-folder"><img
+                                        src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}"> wraps
+                                </div>
+                                <span>(conterá wraps que são funções/decorators personalizados que serão utilizados em
+                                    qualquer route ou em funções)</span>
+                            </li>
+                            <ul class="structure-folder-content">
+                                <li>wrap 1.py</li>
+                                <li>wrap 2.py</li>
+                                <li>...</li>
+                                <li>wrap 3.py</li>
+                            </ul>
+                            <li>__init__.py <span>(inicialização da web, onde irá criar um blueprint separado somente
+                                    para a web, importar e adicionar as blueprints filhos a ela)</span></li>
+                            <li>blueprint 1.py <span>(blueprint 1 filho da web)</span></li>
+                            <li>blueprint 2.py <span>(blueprint 2 filho da web)</span></li>
+                            <li>...</li>
+                            <li>blueprint N.py <span>(blueprint N filho da web)</span></li>
+                        </ul>
+                    </ul>
+                    <li class="structure-folder no-iterable">
+                        <div class="name-folder"><img
+                                src="{{url_for('web.static', filename = 'images/right_arrow_icon.png')}}"> venv</div>
+                        <span>(Diretório do ambiente virtual)</span>
+                    </li>
+                    <li>.env <span>(arquivo em que é interpretado/carregado pelo flask automaticamente, no qual é usado
+                            para definir variáveis de ambiente)</span></li>
+                    <li>main.py <span>(arquivo utilizado para rodar a aplicação)</span></li>
+                    <li>requirements.txt <span>(arquivo em que contem todas as bibliotecas necessárias para rodar a
+                            aplicação)</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{url_for('.static', filename = 'scripts/docs.js')}}"></script>
+{% endblock %}

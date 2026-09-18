@@ -1,0 +1,76 @@
+.navbar-box {
+    position: sticky;
+    background: #39229b;
+    z-index: 1;
+    top: 0px;
+    padding: 10px 60px;
+}
+
+.navbar .container-fluid {
+    align-items: stretch;
+}
+
+.navbar-brand-box {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-nav-box {
+    display: flex;
+    width: 100%;
+    margin-left: 32px;
+    justify-content: space-between;
+    align-items: stretch;
+}
+
+
+.navbar-nav {
+    align-items: stretch;
+}
+
+.navbar-blog {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-blog img {
+    filter: invert(1);
+    margin-right: 10px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding-right: 20px;
+}
+
+.navbar-brand img {
+    filter: invert(1);
+}
+
+.nav-link.signup-link {
+    background-color: #fff;
+    border-radius: 0.375rem;
+    color: #39229b;
+    padding: 12px !important;
+    font-weight: 800;
+}
+
+.nav-link:not(.signup-link, .nav-sumary),
+.navbar-brand,
+.navbar-brand:hover {
+    color: #fff;
+    margin: 0;
+    font-weight: 600;
+}
+
+.nav-link.active:not(.nav-sumary),
+.nav-link:not(.signup-link, .nav-sumary):hover {
+    color: #FEBE10 !important;
+}
+
+.nav-link.signup-link:hover,
+.nav-link.signup-link.active {
+    background-color: #FEBE10;
+    color: #39229b !important;
+}

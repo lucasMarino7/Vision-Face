@@ -1,0 +1,10 @@
+.alert-info {
+    background-color: #39229b;
+    color: #fff;
+    border: none;
+    box-shadow: rgb(38, 57, 77) 0px 20p !important;
+}
+
+.alert-info .btn-close {
+    filter: invert(1);
+}

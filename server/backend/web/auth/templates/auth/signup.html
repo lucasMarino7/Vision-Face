@@ -1,0 +1,60 @@
+{% extends 'base_auth.html' %}
+
+{% block title %}Blog Sign Up{% endblock %}
+
+{% block content %}
+<div class="box-cover">
+    <div class="cover-head">
+        <a href="{{url_for('web.home.index')}}">
+            <img src="{{url_for('web.static', filename = 'images/flask_icon_1.png')}}" height="48">
+            Model Flask
+        </a>
+        <span> / Blog Reviews</span>
+    </div>
+    <h1 class="cover-title">Welcome</h1>
+    <p class="cover-description"> Para fins didáticos e de melhor entendimento da estrutura e das funções utilizadas no
+        backend, foi utilizado um
+        simples exemplo de blog sobre resenhas de filmes e livros. Se você deseja criar suas
+        próprias resenhas ou ler e comentar em resenha de outros usuários: está tudo lá!</p>
+</div>
+<div class="box-form">
+    <div class="content-form">
+        <div class="nav-form">
+            <a href="{{url_for('web.auth.login')}}">Login</a>
+            <a class="active" href="{{url_for('web.auth.signup')}}">Sign up</a>
+        </div>
+        <form action="{{ url_for('web.auth.signup') }}" method="post" class="needs-validation">
+            {{ signup_form.csrf_token }}
+            <fieldset>
+                {% for field in signup_form %}
+                {% if field != signup_form.csrf_token and field != signup_form.submit %}
+                <div class="mb-3">
+                    {{ field.label(class="form-control-label") }}
+
+                    {% if field.errors %}
+                    {{ field(class="form-control is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for erro in field.errors %}
+                        {{ erro }}
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    {{ field(class="form-control") }}
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endfor %}
+                <div class="box-submit">{{ signup_form.submit(class="btn btn-submit") }}</div>
+            </fieldset>
+        </form>
+        <div class="box-redirect text-center">
+            <span>Don't have an account? <a class="a-redirect" href="{{url_for('.login')}}">Log
+                    In</a></span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{url_for('.static', filename = 'scripts/signup.js')}}"></script>
+{% endblock %}

@@ -1,0 +1,7 @@
+.git/
+.env
+**/.env
+**/__pycache__/
+**/*.py[cod]
+server/venv_lucas/
+venv_lucas/

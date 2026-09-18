@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Dosis:wght@200;300;400;500;600;700;800&display=swap');
+
+
+* {
+    font-family: 'Dosis', sans-serif;
+    color: #fff;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    background-color: #492cc3;
+}
+
+.container-page {
+    min-height: 100%;
+    display: flex;
+}
+
+.content-page {
+    margin: auto;
+}
+
+.box-login_signup {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    border-radius: 10px;
+    box-shadow: rgb(38, 57, 77) 0px 20px 30px -10px;
+}
+
+.box-cover {
+    position: relative;
+    width: 480px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #39229b;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.cover-head {
+    font-size: 24px;
+    font-weight: 700;
+    margin-top: 40px;
+}
+
+.cover-head a {
+    text-decoration: none;
+    color: #fff;
+}
+
+.cover-head img {
+    filter: invert(1);
+}
+
+.cover-title {
+    margin: 0.8333em;
+    font-weight: 700;
+}
+
+.cover-description {
+    margin: 16px 0px;
+    padding: 0px 36px;
+    text-align: justify;
+}
+
+.box-form {
+    background-color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.nav-form {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.nav-form a {
+    flex-grow: 1;
+    text-align: center;
+    text-decoration: none;
+    color: #39229b;
+    font-size: 24px;
+    font-weight: 500;
+    border-bottom: 4px solid;
+    border-color: #2517624d;
+    -webkit-transition: color 0.25s;
+    transition: color 0.25s;
+}
+
+.nav-form a.active {
+    border-color: #39229b !important;
+}
+
+.a-redirect {
+    color: #39229b !important;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.a-redirect:hover {
+    text-decoration: underline;
+}
+
+.box-submit {
+    width: 100%;
+    margin-top: 26px;
+}
+
+.btn-submit {
+    width: 100%;
+    color: white;
+    font-weight: bolder;
+    background-color: #39229b;
+}
+
+.btn-submit:hover {
+    color: #39229b;
+    background-color: #FEBE10 !important;
+}
+
+.box-redirect {
+    text-align: center;
+}
+
+.box-redirect span {
+    color: black;
+    margin-bottom: 0;
+}
+
+.content-form {
+    width: 390px;
+    min-height: 570px;
+    padding: 50px 50px 30px;
+}
+
+.content-form form {
+    margin-bottom: 25px;
+}
+
+.form-control-label {
+    color: #39229b !important;
+    font-weight: 600;
+}

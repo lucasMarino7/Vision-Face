@@ -1,0 +1,48 @@
+.navbar-page {
+    position: sticky;
+    background: #39229b;
+    z-index: 1;
+    top: 0px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 280px;
+}
+
+.navbar-page .navbar-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.navbar-page .navbar-brand img {
+    filter: invert(1);
+    margin-right: 10px;
+}
+
+.navbar-page .nav-link {
+    color: #fff;
+    margin: 0;
+    font-weight: 600;
+}
+
+.navbar-page .nav-link.active:not(.nav-sumary),
+.navbar-page .nav-link:not(.signup-link, .nav-sumary):hover {
+    color: #FEBE10 !important;
+}
+
+.navbar-page .nav-link.signup-link:hover,
+.navbar-page .nav-link.signup-link.active {
+    background-color: #FEBE10;
+    color: #251762 !important;
+}
+
+.navbar-page .navbar-nav {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: auto;
+}
+
+.navbar-page .acite {}

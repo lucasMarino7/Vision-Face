@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Blog - {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{url_for('web.static', filename = 'styles/bootstrap.min.css')}}">
+    <link rel="stylesheet" href="{{url_for('web.static', filename = 'styles/footer.css')}}">
+    <link rel="stylesheet" href="{{url_for('.static', filename = 'styles/base.css')}}">
+    <link rel="stylesheet" href="{{url_for('.static', filename = 'styles/navbar.css')}}">
+    {% block styles %}{% endblock %}
+</head>
+
+<body>
+    <div class="container-page">
+        <div class="box-nav_main">
+            {% block navbar %}{% endblock %}
+            <main class="content-page">
+                <div class="flash-messages">
+                    {% with mensagens = get_flashed_messages(with_categories=True) %}
+                    <!-- ira pegar as mensagens com suas categorias enviadas pelo backend -->
+                    {% if mensagens %}
+                    <!-- se houver mensagens enviadas-->
+                    {% for categoria, mensagem in mensagens %}
+                    <!-- faz o unpack, separando a categoria e a mensagem-->
+                    <div class="alert {{ categoria }} alert-dismissible fade show" role="alert">
+                        {{ mensagem }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% endwith %}
+                </div>
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+        {% include 'bases/footer.html' %}
+    </div>
+
+    <script src="{{url_for('web.static', filename = 'scripts/jquery-3.6.0.min.js')}}"></script>
+    <script src="{{url_for('web.static', filename = 'scripts/popper.min.js')}}"></script>
+    <script src="{{url_for('web.static', filename = 'scripts/bootstrap.bundle.min.js')}}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
