@@ -17,3 +17,6 @@
   - sudo apt full-upgrade
 - Depois criei uma pasta Projetos em /home/lucas/ na raspberry através do SSH
 - Logo após isso fiz com git clone deste projeto para minha raspberry conseguir acessar o código atualizado no github e também para minha raspberry conseguir adicionar novos commit ao repositório no github quando estiver em desenvolvimento.
+- crie um ambiente virtual na raspberry com:  python3 -m venv raspberry/.venv --system-site-
+packages
+- logo após, dentro da venv fiz update do pip: pip install --upgrade pip
