@@ -1,11 +1,22 @@
 """Rotas HTTP da API."""
 
-from flask import Blueprint, jsonify
+from flask import Blueprint
+from flask_restx import Api
 
-api_bp = Blueprint("api", __name__)
+from .embedding import embedding_ns
+from .person import person_ns
+from .sync import sync_ns
 
+api_bp = Blueprint('api', __name__)
 
-@api_bp.get("/health")
-def health_check():
-    """Indica que o serviço está disponível."""
-    return jsonify(status="ok"), 200
+# instancia a api
+api = Api(api_bp,
+          title='REST API',
+          version='1.0',
+          description='REST API',
+                  doc='/docs',
+          )
+
+api.add_namespace(embedding_ns)
+api.add_namespace(person_ns)
+api.add_namespace(sync_ns)

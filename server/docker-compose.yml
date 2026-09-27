@@ -1,9 +1,22 @@
 name: vision_face
 
 services:
+  redis:
+    # não mapeia a porta do redis para o host como: 6379:6379, pois o backend é o único serviço que precisa acessar o redis, e ele está no mesmo container network que o redis.
+    image: redis:7.2-alpine
+    healthcheck:
+      # envia um comando ping para o redis e espera a resposta PONG, caso não receba a resposta em 3 segundos, considera o serviço como unhealthy.
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   postgres:
     image: pgvector/pgvector:pg17
     container_name: vision_face_postgres
+
+    # mapeia a porta do postgres para o host como: 5432:5432, para que possa acessar o banco de dados com algum panel como pgadmin
     ports:
       - "5432:5432" 
 
@@ -50,6 +63,8 @@ services:
     # PORTA EXTERNA:PORTA_INTERNA, a porta interna é a porta que o backend está escutando, e a porta externa é a porta que será exposta para o host.
       - "${BACKEND_PORT}:8000"
     depends_on:
+      redis:
+        condition: service_healthy
       postgres:
       # o backend depende do postgres estar saudável antes de iniciar, para evitar erros de conexão com o banco de dados.
         condition: service_healthy

@@ -22,7 +22,7 @@ class EmbeddingModel(db.Model):
     # nome do modelo de IA utilizado para gerar a embedding, para que possamos saber qual modelo foi utilizado
     model = db.Column(db.String(20), nullable=False)
     # tamanho da embedding como 512, 256, 128, etc, para que possamos saber qual tamanho foi utilizado para gerar a embedding
-    dimension = db.Column(db.Integer(), nullable=False)
+    dimension = db.Column(db.Integer(), nullable=False, default=512)
     # angulo do rosto da pessoa na imagem, para que possamos saber qual angulo foi utilizado para gerar a embedding
     angle = db.Column(
         db.String(20), nullable=False)
