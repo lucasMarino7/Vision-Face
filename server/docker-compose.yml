@@ -52,7 +52,7 @@ services:
     env_file:
     - .env
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
       SECRET_KEY: ${SECRET_KEY}
       SECURITY_PASSWORD_SALT: ${SECURITY_PASSWORD_SALT}
       BACKEND_IP: ${BACKEND_IP}
@@ -67,6 +67,25 @@ services:
         condition: service_healthy
       postgres:
       # o backend depende do postgres estar saudável antes de iniciar, para evitar erros de conexão com o banco de dados.
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://0.0.0.0:8000/api/person/', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    restart: unless-stopped
+
+  frontend:
+    container_name: vision_face_frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_RASPBERRY_WS_URL: ${RASPBERRY_WS_URL:-}
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
         condition: service_healthy
     restart: unless-stopped
 

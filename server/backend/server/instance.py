@@ -1,5 +1,6 @@
 from .app_factory import create_app
 from .extensions import *
+from pathlib import Path
 import redis
 
 
@@ -18,7 +19,10 @@ class Server():
         self.ma.init_app(self.app)
         # o diretório de migrations será criado na raiz do projeto server/backend/migrations
         self.migrate.init_app(
-            self.app, self.db, directory="./migrations")
+            self.app,
+            self.db,
+            directory=str(Path(__file__).resolve().parents[1] / "migrations"),
+        )
 
         # print("Conectando no servidor REDIS")
         # try:
