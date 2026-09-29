@@ -6,3 +6,11 @@ venv_pc_lucas
 __pycache__/
 server/venv_lucas/
 server/backend/.env
+
+# Artefatos gerados do frontend React/Vite
+server/frontend/node_modules/
+server/frontend/dist/
+server/frontend/.vite/
+server/frontend/coverage/
+server/frontend/npm-debug.log*
+npm-debug.log*
