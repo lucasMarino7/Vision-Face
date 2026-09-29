@@ -7,6 +7,9 @@ from marshmallow import fields, validate
 
 class EmbeddingSchema(ma.SQLAlchemyAutoSchema):
     """Representação de uma embedding facial associada a uma pessoa."""
+
+    # devido a tipagem da coluna de embedding ser VECTOR, o marshmallow não reconhece essa tipagem e não consegue lidar com ela
+    # então é adicionado essa sobreposição para o marshmallow conseguir lidar com dump e load já que reconhece list e float
     embedding = fields.List(
         fields.Float(),
         required=True,
