@@ -10,6 +10,7 @@ bcrypt==4.2.0
 beautifulsoup4==4.13.4
 blinker==1.9.0
 certifi==2025.1.31
+chromadb>=0.5,<2
 chardet==5.2.0
 charset-normalizer==3.4.2
 cloud-init==25.2
@@ -69,6 +70,7 @@ opencv-python==5.0.0.93
 OpenEXR==1.3.10
 orjson==3.10.7
 packaging==25.0
+python-dotenv>=1.0,<2
 parso==0.8.4
 pexpect==4.9.0
 pgzero==1.2.1
@@ -113,6 +115,9 @@ rpi-lgpio==0.6
 RTIMULib==7.2.1
 scikit-image==0.26.0
 scipy==1.18.1
+SQLAlchemy==2.0.54
+aiortc>=1.9,<2
+websockets>=12,<16
 Send2Trash==1.8.3
 sense-hat==2.6.1
 setuptools==78.1.1
