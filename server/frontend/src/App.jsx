@@ -88,7 +88,7 @@ function App() {
   const [personModal, setPersonModal] = useState(null);
   const [embeddingModal, setEmbeddingModal] = useState(null);
   const [detections, setDetections] = useState([]);
-  const [raspberryUrl, setRaspberryUrl] = useState(() => localStorage.getItem('raspberryWsUrl') ?? WS_DEFAULT);
+  const [raspberryUrl, setRaspberryUrl] = useState(() => localStorage.getItem('raspberryWsUrl') || WS_DEFAULT);
   const [activeRaspberryUrl, setActiveRaspberryUrl] = useState('');
   const [connectionEnabled, setConnectionEnabled] = useState(false);
   const [raspberryOnline, setRaspberryOnline] = useState(false);
@@ -364,7 +364,7 @@ function App() {
       {page === 'live' ? <section className="live-page">
         <form className="connection-bar" onSubmit={configureRaspberry}>
           <div className="connection-icon"><Radio size={18} /></div>
-          <label htmlFor="raspberry-url"><span>ENDPOINT DA RASPBERRY</span><input id="raspberry-url" value={raspberryUrl} onChange={(event) => setRaspberryUrl(event.target.value)} placeholder="ws://192.168.1.20:8765/ws" /></label>
+          <label htmlFor="raspberry-url"><span>ENDPOINT DA RASPBERRY</span><input id="raspberry-url" value={raspberryUrl} onChange={(event) => setRaspberryUrl(event.target.value)} placeholder={WS_DEFAULT || 'ws://192.168.1.20:8765'} /></label>
           <button className="button button-dark" type="submit"><Wifi size={16} /> Conectar</button>
           {raspberryOnline && <button className="button button-quiet" type="button" onClick={() => setConnectionEnabled(false)}><WifiOff size={16} /> Desconectar</button>}
           {socketError && <span className="connection-error"><AlertTriangle size={14} />{socketError}</span>}
