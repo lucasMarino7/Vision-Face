@@ -36,6 +36,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 from database import init_database
+from network_monitor import run_network_monitor
 from recognition.runner import run_recognition_loop
 from sync import run_sync_loop
 from ws_server import DetectionWebSocketServer
@@ -69,6 +70,11 @@ if __name__ == "__main__":
         name="backend-sync",
         daemon=True,
     )
+    Thread(
+        target=run_network_monitor,
+        args=(stop_event, _configured_port()),
+        name="network-monitor", daemon=True
+    ).start()
     sync_thread.start()
     websocket_server = DetectionWebSocketServer(
         host=os.getenv("WEBSOCKET_HOST", "0.0.0.0"),

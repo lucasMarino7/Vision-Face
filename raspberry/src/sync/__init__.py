@@ -363,11 +363,29 @@ def run_sync_loop(stop_event: Event, interval_seconds: float = 30) -> None:
         raise ValueError("Synchronization interval must be greater than zero.")
 
     logger.info("Starting backend synchronization every %.1f seconds.", interval_seconds)
+    backend_online: bool | None = None
+    attempt = 0
     while not stop_event.is_set():
+        attempt += 1
+        logger.info("Synchronization attempt #%d started (%s).", attempt, synchronizer.api_url)
         try:
-            synchronizer.synchronize_once()
+            applied = synchronizer.synchronize_once()
+            if backend_online is False:
+                logger.info("Backend reachable again; synchronization resumed.")
+            if applied:
+                logger.info("Synchronization attempt #%d finished: %d change(s) applied.", attempt, applied)
+            else:
+                logger.info("Synchronization attempt #%d finished: already up to date.", attempt)
+            backend_online = True
         except Exception as e:
-            logger.error("Backend synchronization failed; it will be retried.")
+            logger.error(
+                "Synchronization attempt #%d failed: %s: %s. Retrying in %.0fs.",
+                attempt,
+                type(e).__name__,
+                e,
+                interval_seconds,
+            )
+            backend_online = False
 
         if stop_event.wait(interval_seconds):
             break
