@@ -53,6 +53,9 @@ def run_recognition_loop(
     engine = None
     last_sent_by_person: dict[int, float] = {}
     last_status_at = 0.0
+    fps_frames = 0
+    fps_started_at = time.monotonic()
+    camera_fps = 0.0
     camera = None
     websocket_started = False
     next_websocket_retry = 0.0
@@ -103,6 +106,7 @@ def run_recognition_loop(
 
         try:
             frame_height, frame_width = frame.shape[:2]
+            fps_frames += 1
             websocket_server.update_video_frame(frame)
             faces = engine.process(frame)
         except Exception:
@@ -112,11 +116,17 @@ def run_recognition_loop(
 
         now = time.monotonic()
         if now - last_status_at >= 1:
+            elapsed = now - fps_started_at
+            if elapsed > 0:
+                camera_fps = fps_frames / elapsed
+            fps_frames = 0
+            fps_started_at = now
             _broadcast(
                 websocket_server,
                 {
                     "type": "status",
                     "camera_online": True,
+                    "fps": round(camera_fps, 1),
                 }
             )
             last_status_at = now
@@ -135,6 +145,7 @@ def run_recognition_loop(
                         frame_height=frame_height,
                         websocket_server=websocket_server,
                         log_full_embedding=log_full_embedding,
+                        model_name=model_name,
                     )
                 except Exception:
                     logger.exception("Failed to process a face detection; continuing.")
@@ -163,6 +174,7 @@ def _process_face(
     frame_height: int,
     websocket_server: DetectionWebSocketServer,
     log_full_embedding: bool = False,
+    model_name: str = "buffalo_l",
 ) -> None:
     embedding = face.get("embedding")
     embedding_details = _format_embedding(embedding, log_full_embedding)
@@ -243,11 +255,9 @@ def _process_face(
                 nearest["person_id"],
             )
 
-    if not recognized:
-        return
-
-    person_id = nearest["person_id"]
-    distance = nearest["distance"]
+    # chave -1 representa rostos não reconhecidos (cooldown compartilhado)
+    person_id = nearest["person_id"] if recognized else -1
+    distance = nearest["distance"] if nearest is not None else None
 
     if now - last_sent_by_person.get(person_id, float("-inf")) < cooldown_seconds:
         return
@@ -256,7 +266,10 @@ def _process_face(
         websocket_server,
         {
             "type": "detection",
-            "person": _serialize_person(person),
+            "recognized": recognized,
+            "person": _serialize_person(person) if recognized else None,
+            "embedding": [round(float(value), 6) for value in embedding],
+            "model": model_name,
             "box": {
                 "x": x1,
                 "y": y1,

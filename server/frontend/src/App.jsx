@@ -40,12 +40,15 @@ function normalizeDetection(message) {
   const box = message.box || message.bbox || message.bounding_box || data.box || data.bbox;
   return {
     id: `${Date.now()}-${Math.random()}`,
-    name: data.name || (data.recognized === false || data.person_id == null ? null : 'Pessoa identificada'),
+    recognized: message.recognized ?? Boolean(message.person),
+    person_id: data.id ?? data.person_id ?? null,
+    model: message.model,
+    name: message.recognized === false || !message.person ? null : (data.name || 'Pessoa identificada'),
     date_birth: data.date_birth,
     age: data.age ?? ageFromDate(data.date_birth),
     wanted: Boolean(data.wanted),
     reason: data.reason,
-    embedding: data.embedding,
+    embedding: message.embedding ?? data.embedding,
     box: box && {
       x: Number(box.x ?? box.left ?? 0),
       y: Number(box.y ?? box.top ?? 0),
@@ -94,11 +97,14 @@ function App() {
   const [raspberryOnline, setRaspberryOnline] = useState(false);
   const [cameraOnline, setCameraOnline] = useState(false);
   const [socketError, setSocketError] = useState('');
+  const [fps, setFps] = useState(null);
+  const [assignModal, setAssignModal] = useState(null);
   const [filter, setFilter] = useState('all');
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const peerRef = useRef(null);
   const socketRef = useRef(null);
+  const streamRef = useRef(null);
 
   const selectedPerson = people.find((person) => person.id === selectedPersonId);
   const filteredPeople = people.filter((person) => {
@@ -185,12 +191,22 @@ function App() {
     };
     draw();
     return () => cancelAnimationFrame(animationFrame);
-  }, [detections]);
+  }, [detections, page]);
+
+  // O <video> é desmontado ao sair da página ao vivo; reanexa o stream ao voltar.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (page === 'live' && video && streamRef.current && video.srcObject !== streamRef.current) {
+      video.srcObject = streamRef.current;
+      video.play().catch(() => {});
+    }
+  }, [page]);
 
   useEffect(() => {
     if (!connectionEnabled || !activeRaspberryUrl.trim()) {
       setRaspberryOnline(false);
       setCameraOnline(false);
+      setFps(null);
       return undefined;
     }
     let retryTimer;
@@ -217,14 +233,15 @@ function App() {
           setDetections((current) => [normalizeDetection(message), ...current].slice(0, 30));
         } else if (message.type === 'status') {
           setCameraOnline(Boolean(message.camera_online));
+          if (typeof message.fps === 'number') setFps(message.fps);
+          if (!message.camera_online) setFps(null);
         } else if (message.type === 'offer' && message.sdp) {
           peer = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
           peerRef.current = peer;
           peer.ontrack = (trackEvent) => {
-            if (videoRef.current) {
-              videoRef.current.srcObject = trackEvent.streams[0];
-              setCameraOnline(true);
-            }
+            streamRef.current = trackEvent.streams[0];
+            if (videoRef.current) videoRef.current.srcObject = streamRef.current;
+            setCameraOnline(true);
           };
           peer.onconnectionstatechange = () => {
             setCameraOnline(peer.connectionState === 'connected');
@@ -251,6 +268,7 @@ function App() {
         setCameraOnline(false);
         if (videoRef.current) videoRef.current.srcObject = null;
         peer?.close();
+        streamRef.current = null;
         if (!disposed) retryTimer = window.setTimeout(connect, 3000);
       };
     };
@@ -262,6 +280,7 @@ function App() {
       peer?.close();
       peerRef.current = null;
       socketRef.current = null;
+      streamRef.current = null;
       if (videoRef.current) videoRef.current.srcObject = null;
     };
   }, [connectionEnabled, activeRaspberryUrl]);
@@ -285,11 +304,28 @@ function App() {
     };
     try {
       const existing = personModal.person;
-      await request(existing ? `/person/${existing.id}` : '/person/', {
+      const saved = await request(existing ? `/person/${existing.id}` : '/person/', {
         method: existing ? 'PUT' : 'POST', body: JSON.stringify(payload),
       });
+      const detection = personModal.detection;
       setPersonModal(null);
+      if (!existing && detection) {
+        await attachEmbedding(saved.id, detection, 'frontal');
+        return;
+      }
       setToast(existing ? 'Cadastro atualizado.' : 'Pessoa cadastrada.');
+      await loadPeople();
+    } catch (error) { setToast(error.message); }
+  }
+
+  async function attachEmbedding(personId, detection, angle) {
+    try {
+      await request(`/embedding/${personId}/embeddings`, {
+        method: 'POST',
+        body: JSON.stringify({ embedding: detection.embedding, model: (detection.model || 'buffalo_l').slice(0, 20), angle: angle.trim().slice(0, 20) || 'frontal' }),
+      });
+      setAssignModal(null);
+      setToast('Embedding atrelada à pessoa.');
       await loadPeople();
     } catch (error) { setToast(error.message); }
   }
@@ -376,17 +412,17 @@ function App() {
               <video ref={videoRef} autoPlay playsInline muted />
               <canvas ref={canvasRef} />
               {!cameraOnline && <div className="offline-state"><div className="offline-icon"><Camera size={27} /><span><WifiOff size={15} /></span></div><strong>Raspberry desconectada</strong><p>O vídeo aparecerá aqui quando a câmera estiver transmitindo.</p></div>}
-              {cameraOnline && <div className="video-corner-label"><span className="tiny-dot online" /> STREAM WEBRTC</div>}
+              {cameraOnline && <div className="video-corner-label"><span className="tiny-dot online" /> STREAM WEBRTC{fps != null && ` · ${fps.toFixed(1)} FPS`}</div>}
               <div className="video-timestamp"><Activity size={13} /> {new Date().toLocaleTimeString('pt-BR')}</div>
             </div>
-            <footer className="camera-footer"><span><span className={`tiny-dot ${cameraOnline ? 'online' : ''}`} />{cameraOnline ? 'Stream ativo via WebRTC' : 'Aguardando stream de vídeo'}</span><span><Cpu size={14} /> Detecção facial habilitada</span></footer>
+            <footer className="camera-footer"><span><span className={`tiny-dot ${cameraOnline ? 'online' : ''}`} />{cameraOnline ? 'Stream ativo via WebRTC' : 'Aguardando stream de vídeo'}</span><span><Activity size={14} /> {fps != null ? `${fps.toFixed(1)} FPS (câmera)` : '— FPS'}</span><span><Cpu size={14} /> Detecção facial habilitada</span></footer>
           </section>
           <section className="detections-panel">
             <header className="panel-header detections-header"><div><span className="eyebrow">EVENTOS RECENTES</span><h2>Pessoas identificadas</h2></div><span className="count-badge">{detections.length}</span></header>
             <div className="detections-list">
               {detections.length === 0 ? <div className="empty-detections"><div className="empty-icon"><Fingerprint size={22} /></div><strong>Nenhuma identificação</strong><p>As pessoas detectadas pela câmera serão listadas aqui.</p></div> : detections.map((detection) => <article className={`detection-item ${detection.wanted ? 'wanted-item' : ''}`} key={detection.id}>
                 <div className="detection-avatar">{detection.name ? <UserRound size={17} /> : <CircleHelp size={18} />}</div>
-                <div className="detection-main"><strong>{detection.name || 'Pessoa não reconhecida'}</strong><span>{detection.age != null ? `${detection.age} anos` : 'Idade não informada'}</span>{detection.date_birth && <span>Nascimento: {formatDate(detection.date_birth)}</span>}{detection.wanted && <span className="wanted-tag"><ShieldAlert size={12} /> PROCURADO</span>}{detection.wanted && detection.reason && <p className="wanted-reason">{detection.reason}</p>}{Array.isArray(detection.embedding) && <details className="detection-embedding"><summary>Embedding facial ({detection.embedding.length})</summary><code>{JSON.stringify(detection.embedding)}</code></details>}</div>
+                <div className="detection-main"><strong>{detection.name || 'Pessoa não reconhecida'}</strong><span>{detection.age != null ? `${detection.age} anos` : 'Idade não informada'}</span>{detection.date_birth && <span>Nascimento: {formatDate(detection.date_birth)}</span>}{detection.wanted && <span className="wanted-tag"><ShieldAlert size={12} /> PROCURADO</span>}{detection.wanted && detection.reason && <p className="wanted-reason">{detection.reason}</p>}{!detection.recognized && Array.isArray(detection.embedding) && <button className="button button-accent" type="button" onClick={() => setAssignModal({ detection })}><Plus size={14} /> Adicionar</button>}{Array.isArray(detection.embedding) && <details className="detection-embedding"><summary>Embedding facial ({detection.embedding.length})</summary><code>{JSON.stringify(detection.embedding)}</code></details>}</div>
                 <time>{detection.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</time>
               </article>) }
             </div>
@@ -424,12 +460,27 @@ function App() {
       </section>}
     </main>
 
-    {personModal && <Modal title={personModal.person ? 'Editar pessoa' : 'Cadastrar pessoa'} onClose={() => setPersonModal(null)}><form className="form-content" onSubmit={savePerson}>
+    {personModal && <Modal title={personModal.person ? 'Editar pessoa' : personModal.detection ? 'Cadastrar pessoa e atrelar embedding' : 'Cadastrar pessoa'} onClose={() => setPersonModal(null)}><form className="form-content" onSubmit={savePerson}>
       <label>Nome completo<input name="name" required maxLength="100" defaultValue={personModal.person?.name ?? ''} placeholder="Nome e sobrenome" /></label>
       <label>Data de nascimento<input name="date_birth" type="date" required defaultValue={personModal.person?.date_birth ?? ''} /></label>
       <label className="toggle-field"><span><strong>Procurado pela justiça</strong><small>Marque se houver alerta ativo.</small></span><input name="wanted" type="checkbox" defaultChecked={personModal.person?.wanted ?? false} /></label>
       <label>Motivo do alerta<textarea name="reason" maxLength="200" rows="3" defaultValue={personModal.person?.reason ?? ''} placeholder="Motivo (opcional)" /></label>
       <div className="modal-actions"><button className="button button-quiet" type="button" onClick={() => setPersonModal(null)}>Cancelar</button><button className="button button-accent" type="submit"><Check size={16} /> Salvar cadastro</button></div>
+    </form></Modal>}
+    {assignModal && <Modal title="Atrelar embedding a uma pessoa" onClose={() => setAssignModal(null)}><form className="form-content" onSubmit={(event) => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      attachEmbedding(Number(form.get('person_id')), assignModal.detection, form.get('angle'));
+    }}>
+      <label>Pessoa cadastrada<select name="person_id" required defaultValue="">
+        <option value="" disabled>Selecione uma pessoa</option>
+        {people.map((person) => <option key={person.id} value={person.id}>{person.name} (#{person.id})</option>)}
+      </select></label>
+      <label>Ângulo<input name="angle" required maxLength="20" defaultValue="frontal" /></label>
+      <div className="modal-actions">
+        <button className="button button-quiet" type="button" onClick={() => { setPersonModal({ person: null, detection: assignModal.detection }); setAssignModal(null); }}><Plus size={16} /> Cadastrar nova pessoa</button>
+        <button className="button button-accent" type="submit" disabled={!people.length}><Check size={16} /> Atrelar</button>
+      </div>
     </form></Modal>}
     {embeddingModal && <Modal title={embeddingModal.embedding ? 'Editar embedding facial' : 'Adicionar embedding facial'} wide onClose={() => setEmbeddingModal(null)}><form className="form-content" onSubmit={saveEmbedding}>
       <div className="embedding-person-hint"><Fingerprint size={16} /> Associada a <strong>{embeddingModal.person.name}</strong></div>
