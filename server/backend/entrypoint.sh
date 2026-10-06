@@ -6,4 +6,4 @@ echo "Aplicando migrations..."
 flask --app backend.main:app db upgrade
 
 echo "Iniciando aplicação Flask..."
-exec gunicorn --bind 0.0.0.0:8000 --workers "${GUNICORN_WORKERS:-2}" "backend.main:app"
+exec gunicorn --access-logfile - --error-logfile - --bind 0.0.0.0:8000 --workers "${GUNICORN_WORKERS:-2}" "backend.main:app"
