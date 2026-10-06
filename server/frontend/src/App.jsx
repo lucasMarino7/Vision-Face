@@ -352,11 +352,6 @@ function App() {
         <button className={page === 'embeddings' ? 'nav-item active' : 'nav-item'} onClick={() => setPage('embeddings')}><Fingerprint size={18} /> Embeddings</button>
       </nav>
       <div className="sidebar-spacer" />
-      <div className="system-card">
-        <div className="system-card-head"><span className={`status-dot ${raspberryOnline ? 'online' : ''}`} /><span>RASPBERRY PI</span><span className="system-status">{raspberryOnline ? 'ONLINE' : 'OFFLINE'}</span></div>
-        <p>{raspberryOnline ? 'Canal de eventos conectado' : 'Aguardando conexão do dispositivo'}</p>
-        <div className="system-line"><span>Backend</span><span><span className="tiny-dot online" /> API</span></div>
-      </div>
       <div className="sidebar-foot"><span>VISION FACE</span><span>MONITOR v1.0</span></div>
     </aside>
 

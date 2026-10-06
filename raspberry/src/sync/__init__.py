@@ -1,12 +1,10 @@
 import logging
 import os
 from datetime import date, datetime
-from pathlib import Path
 from threading import Event
 from typing import Any
 
 from chromadb.errors import ChromaError
-from dotenv import load_dotenv
 import requests
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -18,7 +16,6 @@ from database.models import Outbox, Person, SyncChange
 
 
 logger = logging.getLogger(__name__)
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 
 class Synchronizer:

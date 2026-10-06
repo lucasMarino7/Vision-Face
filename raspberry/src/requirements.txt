@@ -1,4 +1,5 @@
 annotated-doc==0.0.5
+aiortc>=1.9  # WebRTC (video_track/ws_server)
 annotated-types==0.8.0
 anyio==4.15.1
 apt-listchanges==4.8

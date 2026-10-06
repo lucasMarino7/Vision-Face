@@ -1,12 +1,17 @@
 import secrets
 import os
+from pathlib import Path
 from dotenv import load_dotenv
+
+# .env único na raiz do projeto (parents[3] = raiz do monorepo)
+ROOT_ENV_FILE = Path(__file__).resolve().parents[3] / ".env"
 
 
 class Config(object):
     def __init__(self):
-        # carrega as variáveis de ambiente do arquivo .env (o arquivo .env deve estar na raiz do projeto e apenas é utilizado para desenvolvimento, em produção as variáveis de ambiente devem ser definidas diretamente no servidor)
-        load_dotenv()
+        # carrega as variáveis de ambiente do arquivo .env (da raiz do projeto, apenas é utilizado para desenvolvimento, em produção as variáveis de ambiente devem ser definidas diretamente no servidor)
+        # não sobrescreve variáveis já definidas (docker/coolify)
+        load_dotenv(ROOT_ENV_FILE)
 
         self.checkAllVariables()
 

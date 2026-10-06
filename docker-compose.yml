@@ -18,7 +18,7 @@ services:
 
     # mapeia a porta do postgres para o host como: 5432:5432, para que possa acessar o banco de dados com algum panel como pgadmin
     ports:
-      - "5432:5432" 
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
 
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -30,7 +30,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       # o arquivo init.sql é necessário para criar a extensão pgvector no banco de dados.
       # este arquivo é executado apenas na primeira vez que o container é iniciado, garantindo que a extensão seja criada antes do backend tentar se conectar ao banco de dados.
-      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./server/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
     # verifica se o banco de dados está pronto para receber conexões, evitando que o backend tente se conectar antes do banco estar pronto.
     # caso o banco não seja inicializado com sucesso depois das tentativas, o container será marcado como unhealthy e o backend não será iniciado.
@@ -44,24 +44,27 @@ services:
   backend:
     container_name: vision_face_backend
     build:
-      context: .
+      context: ./server
       dockerfile: ./backend/Dockerfile
 
-    # o env file é necessário para o flask acessar as variaveis de ambiente quando rodado localmente, porém quando for rodado no servidor, as variaveis de ambiente serão passadas diretamente pelo servidor não tendo um arquivo .env
-    # assim quando não for rodado no servidor será necessário criar um arquivo .env com as variaveis de ambiente corretas, já quando for rodado no servidor, as variaveis de ambiente serão passadas diretamente pelo servidor não tendo um arquivo .env
-    env_file:
-    - .env
+    # as variáveis vêm do arquivo .env da raiz do projeto (local) ou do painel do Coolify (produção).
+    # o compose as lê automaticamente para interpolação ${...}; apenas as necessárias ao backend são repassadas.
     environment:
       DATABASE_URL: "postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}"
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
       SECRET_KEY: ${SECRET_KEY}
       SECURITY_PASSWORD_SALT: ${SECURITY_PASSWORD_SALT}
-      BACKEND_IP: ${BACKEND_IP}
-      BACKEND_PORT: ${BACKEND_PORT}
-      ENV: ${ENV}
-      FLASK_APP: ${FLASK_APP}
+      BACKEND_IP: ${BACKEND_IP:-0.0.0.0}
+      BACKEND_PORT: ${BACKEND_PORT:-8000}
+      ENV: ${ENV:-production}
+      FLASK_APP: ${FLASK_APP:-main}
     ports:
     # PORTA EXTERNA:PORTA_INTERNA, a porta interna é a porta que o backend está escutando, e a porta externa é a porta que será exposta para o host.
-      - "${BACKEND_PORT}:8000"
+      - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       redis:
         condition: service_healthy
@@ -79,9 +82,9 @@ services:
   frontend:
     container_name: vision_face_frontend
     build:
-      context: ./frontend
+      context: ./server/frontend
       args:
-        VITE_RASPBERRY_WS_URL: ${RASPBERRY_WS_URL:-}
+        RASPBERRY_WS_URL: ${RASPBERRY_WS_URL:-}
     ports:
       - "${FRONTEND_PORT:-3000}:80"
     depends_on:

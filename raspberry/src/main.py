@@ -27,7 +27,13 @@
 
 import logging
 import os
+from pathlib import Path
 from threading import Event, Thread
+
+from dotenv import load_dotenv
+
+# .env único na raiz do monorepo (parents[2]); variáveis já definidas no ambiente têm prioridade
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 from database import init_database
 from recognition.runner import run_recognition_loop
