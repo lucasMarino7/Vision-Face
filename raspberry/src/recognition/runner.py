@@ -132,9 +132,10 @@ def run_recognition_loop(
             last_status_at = now
 
         try:
+            live_faces = []
             for face in faces:
                 try:
-                    _process_face(
+                    info = _process_face(
                         face=face,
                         minimum_detection_score=minimum_detection_score,
                         configured_threshold=configured_threshold,
@@ -147,8 +148,19 @@ def run_recognition_loop(
                         log_full_embedding=log_full_embedding,
                         model_name=model_name,
                     )
+                    if info is not None:
+                        live_faces.append(info)
                 except Exception:
                     logger.exception("Failed to process a face detection; continuing.")
+            # caixas do frame atual (lista vazia limpa as caixas no frontend)
+            _broadcast(
+                websocket_server,
+                {
+                    "type": "faces",
+                    "faces": live_faces,
+                    "frame_size": {"width": frame_width, "height": frame_height},
+                },
+            )
         except Exception:
             logger.exception("Face detection results could not be processed.")
             stop_event.wait(0.1)
@@ -175,7 +187,7 @@ def _process_face(
     websocket_server: DetectionWebSocketServer,
     log_full_embedding: bool = False,
     model_name: str = "buffalo_l",
-) -> None:
+) -> dict[str, Any] | None:
     embedding = face.get("embedding")
     embedding_details = _format_embedding(embedding, log_full_embedding)
     detection_score = face.get("det_score")
@@ -192,16 +204,16 @@ def _process_face(
             minimum_detection_score,
             embedding_details,
         )
-        return
+        return None
 
     bbox = face.get("bbox")
     if not isinstance(bbox, (list, tuple)) or len(bbox) != 4:
         logger.warning("Ignoring face detection with invalid bounding box: %r", bbox)
-        return
+        return None
     x1, y1, x2, y2 = (int(coordinate) for coordinate in bbox)
     if x2 <= x1 or y2 <= y1:
         logger.warning("Ignoring face detection with empty bounding box: %r", bbox)
-        return
+        return None
 
     try:
         nearest = _find_nearest_person(
@@ -214,7 +226,7 @@ def _process_face(
             detection_score,
             embedding_details,
         )
-        return
+        return None
 
     person = None
     recognized = False
@@ -255,12 +267,19 @@ def _process_face(
                 nearest["person_id"],
             )
 
+    face_info = {
+        "box": {"x": x1, "y": y1, "width": x2 - x1, "height": y2 - y1},
+        "recognized": recognized,
+        "name": person["name"] if recognized else None,
+        "wanted": bool(person["wanted"]) if recognized else False,
+    }
+
     # chave -1 representa rostos não reconhecidos (cooldown compartilhado)
     person_id = nearest["person_id"] if recognized else -1
     distance = nearest["distance"] if nearest is not None else None
 
     if now - last_sent_by_person.get(person_id, float("-inf")) < cooldown_seconds:
-        return
+        return face_info
 
     _broadcast(
         websocket_server,
@@ -285,6 +304,7 @@ def _process_face(
         }
     )
     last_sent_by_person[person_id] = now
+    return face_info
 
 
 def _close_camera(camera) -> None:

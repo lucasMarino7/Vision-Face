@@ -59,6 +59,21 @@ function normalizeDetection(message) {
   };
 }
 
+function cosineSimilarity(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return 0;
+  let dot = 0; let normA = 0; let normB = 0;
+  for (let index = 0; index < a.length; index += 1) {
+    dot += a[index] * b[index]; normA += a[index] ** 2; normB += b[index] ** 2;
+  }
+  return normA && normB ? dot / Math.sqrt(normA * normB) : 0;
+}
+
+function sameFace(existing, incoming) {
+  if (existing.recognized !== incoming.recognized) return false;
+  if (incoming.recognized) return existing.person_id === incoming.person_id;
+  return cosineSimilarity(existing.embedding, incoming.embedding) >= 0.5;
+}
+
 function IconButton({ label, onClick, children, danger = false }) {
   return <button className={`icon-button${danger ? ' danger' : ''}`} type="button" title={label} aria-label={label} onClick={onClick}>{children}</button>;
 }
@@ -105,6 +120,7 @@ function App() {
   const peerRef = useRef(null);
   const socketRef = useRef(null);
   const streamRef = useRef(null);
+  const facesRef = useRef({ faces: [], at: 0 });
 
   const selectedPerson = people.find((person) => person.id === selectedPersonId);
   const filteredPeople = people.filter((person) => {
@@ -166,7 +182,8 @@ function App() {
           canvas.height = height;
         }
         context.clearRect(0, 0, width, height);
-        detections.forEach((detection) => {
+        const live = Date.now() - facesRef.current.at < 1500 ? facesRef.current.faces : [];
+        live.forEach((detection) => {
           if (!detection.box) return;
           const { x, y, width: boxWidth, height: boxHeight } = detection.box;
           const scaleX = x <= 1 && boxWidth <= 1 ? width : 1;
@@ -191,7 +208,7 @@ function App() {
     };
     draw();
     return () => cancelAnimationFrame(animationFrame);
-  }, [detections, page]);
+  }, [page]);
 
   // O <video> é desmontado ao sair da página ao vivo; reanexa o stream ao voltar.
   useEffect(() => {
@@ -229,8 +246,17 @@ function App() {
       socket.onmessage = async (event) => {
         let message;
         try { message = JSON.parse(event.data); } catch { return; }
-        if (['detection', 'person_detected', 'face'].includes(message.type)) {
-          setDetections((current) => [normalizeDetection(message), ...current].slice(0, 30));
+        if (message.type === 'faces') {
+          facesRef.current = { faces: Array.isArray(message.faces) ? message.faces : [], at: Date.now() };
+        } else if (['detection', 'person_detected', 'face'].includes(message.type)) {
+          const incoming = normalizeDetection(message);
+          setDetections((current) => {
+            // mesma pessoa/rosto: atualiza o registro existente em vez de duplicar
+            const index = current.findIndex((item) => sameFace(item, incoming));
+            if (index === -1) return [incoming, ...current].slice(0, 30);
+            const rest = current.filter((_, position) => position !== index);
+            return [{ ...incoming, id: current[index].id }, ...rest];
+          });
         } else if (message.type === 'status') {
           setCameraOnline(Boolean(message.camera_online));
           if (typeof message.fps === 'number') setFps(message.fps);
@@ -394,15 +420,16 @@ function App() {
     <main className="main-content">
       <header className="topbar">
         <div><div className="breadcrumbs">VISION FACE <span>/</span> {page === 'live' ? 'MONITORAMENTO' : page === 'people' ? 'CADASTROS' : 'BIOMETRIA'}</div><h1>{page === 'live' ? 'Monitoramento ao vivo' : page === 'people' ? 'Pessoas cadastradas' : 'Embeddings faciais'}</h1></div>
-        <div className="topbar-meta"><span className={`connection-pill ${raspberryOnline ? 'connected' : ''}`}><span className="tiny-dot" />{raspberryOnline ? 'Dispositivo conectado' : 'Sem dispositivo'}</span><span className="current-time">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span></div>
+        <div className="topbar-meta"><span className={`connection-pill ${raspberryOnline ? 'connected' : ''}`}><span className="tiny-dot" />{raspberryOnline ? 'Dispositivo conectado' : 'Sem dispositivo'}</span></div>
       </header>
 
       {page === 'live' ? <section className="live-page">
         <form className="connection-bar" onSubmit={configureRaspberry}>
           <div className="connection-icon"><Radio size={18} /></div>
           <label htmlFor="raspberry-url"><span>ENDPOINT DA RASPBERRY</span><input id="raspberry-url" value={raspberryUrl} onChange={(event) => setRaspberryUrl(event.target.value)} placeholder={WS_DEFAULT || 'ws://192.168.1.20:8765'} /></label>
-          <button className="button button-dark" type="submit"><Wifi size={16} /> Conectar</button>
-          {raspberryOnline && <button className="button button-quiet" type="button" onClick={() => setConnectionEnabled(false)}><WifiOff size={16} /> Desconectar</button>}
+          {connectionEnabled
+            ? <button className="button button-quiet" type="button" onClick={() => setConnectionEnabled(false)}><WifiOff size={16} /> Desconectar</button>
+            : <button className="button button-dark" type="submit"><Wifi size={16} /> Conectar</button>}
           {socketError && <span className="connection-error"><AlertTriangle size={14} />{socketError}</span>}
         </form>
         <div className="live-grid">
@@ -429,8 +456,7 @@ function App() {
             <footer className="events-footer"><span><Activity size={14} /> Eventos nesta sessão</span><button className="text-button" onClick={() => setDetections([])} disabled={!detections.length}>Limpar</button></footer>
           </section>
         </div>
-        <div className="notice-strip"><ShieldAlert size={16} /><p>Identificações são indicações automatizadas e devem ser verificadas por um operador antes de qualquer ação.</p><span>PRIVACIDADE E USO RESPONSÁVEL</span></div>
-      </section> : page === 'people' ? <section className="people-page">
+        </section> : page === 'people' ? <section className="people-page">
         <div className="people-toolbar"><div className="people-summary"><span className="summary-number">{people.length.toString().padStart(2, '0')}</span><span>REGISTROS NO SISTEMA</span></div><div className="people-actions"><label className="search-field"><Search size={16} /><input placeholder="Buscar por nome ou ID" value={search} onChange={(event) => setSearch(event.target.value)} /></label><div className="filter-wrap"><select value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filtrar pessoas"><option value="all">Todos os registros</option><option value="wanted">Procurados</option><option value="regular">Demais pessoas</option></select><ChevronDown size={14} /></div><button className="button button-accent" onClick={() => setPersonModal({ person: null })}><Plus size={17} /> Nova pessoa</button></div></div>
         {apiError && <div className="api-error"><AlertTriangle size={17} /><span>Não foi possível carregar a API: {apiError}</span><button className="text-button" onClick={loadPeople}>Tentar novamente</button></div>}
         <div className="registry-layout">
