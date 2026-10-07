@@ -10,6 +10,7 @@ from database import PERSON_CACHE, PERSON_CACHE_LOCK
 from database.chroma import face_collection, search_embedding
 from .camera import Camera
 from .face_engine import FaceEngine
+from sync import get_sync_status
 from ws_server import DetectionWebSocketServer
 
 
@@ -26,11 +27,6 @@ def run_recognition_loop(
         default=0.5,
         minimum=0.0,
         maximum=1.0,
-    )
-    cooldown_seconds = _environment_float(
-        "FACE_DETECTION_COOLDOWN_SECONDS",
-        default=5.0,
-        minimum=0.0,
     )
     configured_threshold = os.getenv("FACE_MATCH_DISTANCE_THRESHOLD") or None
     log_full_embedding = os.getenv("FACE_LOG_FULL_EMBEDDING", "false").lower() in {
@@ -51,7 +47,6 @@ def run_recognition_loop(
             configured_threshold = None
 
     engine = None
-    last_sent_by_person: dict[int, float] = {}
     last_status_at = 0.0
     fps_frames = 0
     fps_started_at = time.monotonic()
@@ -127,6 +122,7 @@ def run_recognition_loop(
                     "type": "status",
                     "camera_online": True,
                     "fps": round(camera_fps, 1),
+                    "sync": get_sync_status(),
                 }
             )
             last_status_at = now
@@ -139,12 +135,6 @@ def run_recognition_loop(
                         face=face,
                         minimum_detection_score=minimum_detection_score,
                         configured_threshold=configured_threshold,
-                        cooldown_seconds=cooldown_seconds,
-                        now=now,
-                        last_sent_by_person=last_sent_by_person,
-                        frame_width=frame_width,
-                        frame_height=frame_height,
-                        websocket_server=websocket_server,
                         log_full_embedding=log_full_embedding,
                         model_name=model_name,
                     )
@@ -179,12 +169,6 @@ def _process_face(
     face: dict[str, Any],
     minimum_detection_score: float,
     configured_threshold: str | None,
-    cooldown_seconds: float,
-    now: float,
-    last_sent_by_person: dict[int, float],
-    frame_width: int,
-    frame_height: int,
-    websocket_server: DetectionWebSocketServer,
     log_full_embedding: bool = False,
     model_name: str = "buffalo_l",
 ) -> dict[str, Any] | None:
@@ -267,44 +251,14 @@ def _process_face(
                 nearest["person_id"],
             )
 
-    face_info = {
-        "box": {"x": x1, "y": y1, "width": x2 - x1, "height": y2 - y1},
+    return {
         "recognized": recognized,
-        "name": person["name"] if recognized else None,
-        "wanted": bool(person["wanted"]) if recognized else False,
+        "person": _serialize_person(person) if recognized else None,
+        "embedding": [round(float(value), 6) for value in embedding],
+        "model": model_name,
+        "box": {"x": x1, "y": y1, "width": x2 - x1, "height": y2 - y1},
+        "distance": nearest["distance"] if nearest is not None else None,
     }
-
-    # chave -1 representa rostos não reconhecidos (cooldown compartilhado)
-    person_id = nearest["person_id"] if recognized else -1
-    distance = nearest["distance"] if nearest is not None else None
-
-    if now - last_sent_by_person.get(person_id, float("-inf")) < cooldown_seconds:
-        return face_info
-
-    _broadcast(
-        websocket_server,
-        {
-            "type": "detection",
-            "recognized": recognized,
-            "person": _serialize_person(person) if recognized else None,
-            "embedding": [round(float(value), 6) for value in embedding],
-            "model": model_name,
-            "box": {
-                "x": x1,
-                "y": y1,
-                "width": x2 - x1,
-                "height": y2 - y1,
-            },
-            "frame_size": {
-                "width": frame_width,
-                "height": frame_height,
-            },
-            "distance": distance,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }
-    )
-    last_sent_by_person[person_id] = now
-    return face_info
 
 
 def _close_camera(camera) -> None:

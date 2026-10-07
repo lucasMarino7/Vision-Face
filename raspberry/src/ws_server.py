@@ -8,6 +8,9 @@ import websockets
 from websockets.exceptions import ConnectionClosed
 
 
+from sync import get_sync_status
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -72,6 +75,7 @@ class DetectionWebSocketServer:
                 {
                     "type": "status",
                     "camera_online": online,
+                    "sync": get_sync_status(),
                 }
             )
         except Exception:
@@ -135,6 +139,7 @@ class DetectionWebSocketServer:
                     {
                         "type": "status",
                         "camera_online": self._camera_online,
+                        "sync": get_sync_status(),
                     }
                 )
             )

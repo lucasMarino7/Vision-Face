@@ -1,7 +1,8 @@
 import logging
 import os
-from datetime import date, datetime
-from threading import Event
+import time
+from datetime import date, datetime, timezone
+from threading import Event, Lock
 from typing import Any
 
 from chromadb.errors import ChromaError
@@ -16,6 +17,36 @@ from database.models import Outbox, Person, SyncChange
 
 
 logger = logging.getLogger(__name__)
+
+_status_lock = Lock()
+_status: dict[str, Any] = {
+    "syncing": False,
+    "backend_online": None,
+    "last_sync_at": None,
+    "next_sync_at": None,
+    "interval_seconds": None,
+}
+
+
+def _update_status(**values: Any) -> None:
+    with _status_lock:
+        _status.update(values)
+
+
+def get_sync_status() -> dict[str, Any]:
+    """Estado da sincronização para o frontend (datas em UTC ISO-8601)."""
+    with _status_lock:
+        status = dict(_status)
+    next_sync_at = status["next_sync_at"]
+    status["next_sync_in"] = (
+        None
+        if next_sync_at is None
+        else max(0.0, round(next_sync_at - time.time(), 1))
+    )
+    for key in ("last_sync_at", "next_sync_at"):
+        if status[key] is not None:
+            status[key] = datetime.fromtimestamp(status[key], timezone.utc).isoformat()
+    return status
 
 
 class Synchronizer:
@@ -365,8 +396,10 @@ def run_sync_loop(stop_event: Event, interval_seconds: float = 30) -> None:
     logger.info("Starting backend synchronization every %.1f seconds.", interval_seconds)
     backend_online: bool | None = None
     attempt = 0
+    _update_status(interval_seconds=interval_seconds, next_sync_at=time.time())
     while not stop_event.is_set():
         attempt += 1
+        _update_status(syncing=True, next_sync_at=None)
         logger.info("Synchronization attempt #%d started (%s).", attempt, synchronizer.api_url)
         try:
             applied = synchronizer.synchronize_once()
@@ -377,6 +410,7 @@ def run_sync_loop(stop_event: Event, interval_seconds: float = 30) -> None:
             else:
                 logger.info("Synchronization attempt #%d finished: already up to date.", attempt)
             backend_online = True
+            _update_status(last_sync_at=time.time())
         except Exception as e:
             logger.error(
                 "Synchronization attempt #%d failed: %s: %s. Retrying in %.0fs.",
@@ -387,5 +421,10 @@ def run_sync_loop(stop_event: Event, interval_seconds: float = 30) -> None:
             )
             backend_online = False
 
+        _update_status(
+            syncing=False,
+            backend_online=backend_online,
+            next_sync_at=time.time() + interval_seconds,
+        )
         if stop_event.wait(interval_seconds):
             break

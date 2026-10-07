@@ -59,19 +59,12 @@ function normalizeDetection(message) {
   };
 }
 
-function cosineSimilarity(a, b) {
-  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return 0;
-  let dot = 0; let normA = 0; let normB = 0;
-  for (let index = 0; index < a.length; index += 1) {
-    dot += a[index] * b[index]; normA += a[index] ** 2; normB += b[index] ** 2;
-  }
-  return normA && normB ? dot / Math.sqrt(normA * normB) : 0;
-}
-
-function sameFace(existing, incoming) {
-  if (existing.recognized !== incoming.recognized) return false;
-  if (incoming.recognized) return existing.person_id === incoming.person_id;
-  return cosineSimilarity(existing.embedding, incoming.embedding) >= 0.5;
+function syncLabel(sync) {
+  if (sync.syncing) return 'Sincronizando…';
+  if (sync.next_sync_at == null) return 'Sincronização pendente';
+  const remaining = Math.max(0, Math.round(sync.next_sync_in - (Date.now() - sync.receivedAt) / 1000));
+  const at = new Date(sync.next_sync_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  return `${sync.backend_online === false ? 'Backend offline · ' : ''}Próxima sync: ${at} (em ${remaining}s)`;
 }
 
 function IconButton({ label, onClick, children, danger = false }) {
@@ -105,7 +98,8 @@ function App() {
   const [toast, setToast] = useState('');
   const [personModal, setPersonModal] = useState(null);
   const [embeddingModal, setEmbeddingModal] = useState(null);
-  const [detections, setDetections] = useState([]);
+  const [liveFaces, setLiveFaces] = useState([]);
+  const [sync, setSync] = useState(null);
   const [raspberryUrl, setRaspberryUrl] = useState(() => localStorage.getItem('raspberryWsUrl') || WS_DEFAULT);
   const [activeRaspberryUrl, setActiveRaspberryUrl] = useState('');
   const [connectionEnabled, setConnectionEnabled] = useState(false);
@@ -167,6 +161,24 @@ function App() {
     if (page === 'embeddings') loadEmbeddings();
   }, [page]);
 
+  // rostos em tempo real: some da lista quando a Raspberry para de enviar frames
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (Date.now() - facesRef.current.at > 1500) {
+        facesRef.current = { faces: [], at: 0 };
+        setLiveFaces((current) => (current.length ? [] : current));
+      }
+    }, 500);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  // contagem regressiva local da próxima sincronização
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = window.setInterval(() => setTick((value) => value + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     let animationFrame;
     const canvas = canvasRef.current;
@@ -224,6 +236,7 @@ function App() {
       setRaspberryOnline(false);
       setCameraOnline(false);
       setFps(null);
+      setSync(null);
       return undefined;
     }
     let retryTimer;
@@ -247,19 +260,13 @@ function App() {
         let message;
         try { message = JSON.parse(event.data); } catch { return; }
         if (message.type === 'faces') {
-          facesRef.current = { faces: Array.isArray(message.faces) ? message.faces : [], at: Date.now() };
-        } else if (['detection', 'person_detected', 'face'].includes(message.type)) {
-          const incoming = normalizeDetection(message);
-          setDetections((current) => {
-            // mesma pessoa/rosto: atualiza o registro existente em vez de duplicar
-            const index = current.findIndex((item) => sameFace(item, incoming));
-            if (index === -1) return [incoming, ...current].slice(0, 30);
-            const rest = current.filter((_, position) => position !== index);
-            return [{ ...incoming, id: current[index].id }, ...rest];
-          });
+          const faces = Array.isArray(message.faces) ? message.faces.map(normalizeDetection) : [];
+          facesRef.current = { faces, at: Date.now() };
+          setLiveFaces(faces);
         } else if (message.type === 'status') {
           setCameraOnline(Boolean(message.camera_online));
           if (typeof message.fps === 'number') setFps(message.fps);
+          if (message.sync) setSync({ ...message.sync, receivedAt: Date.now() });
           if (!message.camera_online) setFps(null);
         } else if (message.type === 'offer' && message.sdp) {
           peer = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
@@ -420,7 +427,7 @@ function App() {
     <main className="main-content">
       <header className="topbar">
         <div><div className="breadcrumbs">VISION FACE <span>/</span> {page === 'live' ? 'MONITORAMENTO' : page === 'people' ? 'CADASTROS' : 'BIOMETRIA'}</div><h1>{page === 'live' ? 'Monitoramento ao vivo' : page === 'people' ? 'Pessoas cadastradas' : 'Embeddings faciais'}</h1></div>
-        <div className="topbar-meta"><span className={`connection-pill ${raspberryOnline ? 'connected' : ''}`}><span className="tiny-dot" />{raspberryOnline ? 'Dispositivo conectado' : 'Sem dispositivo'}</span></div>
+        <div className="topbar-meta"><span className={`connection-pill ${raspberryOnline ? 'connected' : ''}`}><span className="tiny-dot" />{raspberryOnline ? 'Dispositivo conectado' : 'Sem dispositivo'}</span>{sync && <span className={`connection-pill ${sync.syncing ? 'connected' : ''}`}><span className="tiny-dot" />{syncLabel(sync)}</span>}</div>
       </header>
 
       {page === 'live' ? <section className="live-page">
@@ -445,15 +452,15 @@ function App() {
             <footer className="camera-footer"><span><span className={`tiny-dot ${cameraOnline ? 'online' : ''}`} />{cameraOnline ? 'Stream ativo via WebRTC' : 'Aguardando stream de vídeo'}</span><span><Activity size={14} /> {fps != null ? `${fps.toFixed(1)} FPS (câmera)` : '— FPS'}</span><span><Cpu size={14} /> Detecção facial habilitada</span></footer>
           </section>
           <section className="detections-panel">
-            <header className="panel-header detections-header"><div><span className="eyebrow">EVENTOS RECENTES</span><h2>Pessoas identificadas</h2></div><span className="count-badge">{detections.length}</span></header>
+            <header className="panel-header detections-header"><div><span className="eyebrow">TEMPO REAL</span><h2>Rostos identificados</h2></div><span className="count-badge">{liveFaces.length}</span></header>
             <div className="detections-list">
-              {detections.length === 0 ? <div className="empty-detections"><div className="empty-icon"><Fingerprint size={22} /></div><strong>Nenhuma identificação</strong><p>As pessoas detectadas pela câmera serão listadas aqui.</p></div> : detections.map((detection) => <article className={`detection-item ${detection.wanted ? 'wanted-item' : ''}`} key={detection.id}>
+              {liveFaces.length === 0 ? <div className="empty-detections"><div className="empty-icon"><Fingerprint size={22} /></div><strong>Nenhum rosto na câmera</strong><p>Os rostos visíveis agora na câmera serão listados aqui.</p></div> : liveFaces.map((detection, index) => <article className={`detection-item ${detection.wanted ? 'wanted-item' : ''}`} key={index}>
                 <div className="detection-avatar">{detection.name ? <UserRound size={17} /> : <CircleHelp size={18} />}</div>
                 <div className="detection-main"><strong>{detection.name || 'Pessoa não reconhecida'}</strong><span>{detection.age != null ? `${detection.age} anos` : 'Idade não informada'}</span>{detection.date_birth && <span>Nascimento: {formatDate(detection.date_birth)}</span>}{detection.wanted && <span className="wanted-tag"><ShieldAlert size={12} /> PROCURADO</span>}{detection.wanted && detection.reason && <p className="wanted-reason">{detection.reason}</p>}{!detection.recognized && Array.isArray(detection.embedding) && <button className="button button-accent" type="button" onClick={() => setAssignModal({ detection })}><Plus size={14} /> Adicionar</button>}{Array.isArray(detection.embedding) && <details className="detection-embedding"><summary>Embedding facial ({detection.embedding.length})</summary><code>{JSON.stringify(detection.embedding)}</code></details>}</div>
                 <time>{detection.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</time>
               </article>) }
             </div>
-            <footer className="events-footer"><span><Activity size={14} /> Eventos nesta sessão</span><button className="text-button" onClick={() => setDetections([])} disabled={!detections.length}>Limpar</button></footer>
+            <footer className="events-footer"><span><Activity size={14} /> Rostos visíveis agora</span></footer>
           </section>
         </div>
         </section> : page === 'people' ? <section className="people-page">
