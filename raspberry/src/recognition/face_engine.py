@@ -1,7 +1,15 @@
 import logging
+import warnings
 
 import numpy as np
 
+
+# insightface still calls the deprecated skimage `estimate`; harmless until skimage 2.2.
+warnings.filterwarnings(
+    "ignore",
+    message=".*`estimate` is deprecated.*",
+    category=FutureWarning,
+)
 
 logger = logging.getLogger(__name__)
 
