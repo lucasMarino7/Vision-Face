@@ -29,6 +29,26 @@ function ageFromDate(date) {
     (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
 }
 
+// datas no formato brasileiro (dd/mm/aaaa) na interface; a API continua usando ISO (aaaa-mm-dd)
+function maskDate(value) {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  return [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)].filter(Boolean).join('/');
+}
+
+function isoToBr(iso) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || '');
+  return match ? `${match[3]}/${match[2]}/${match[1]}` : '';
+}
+
+function brToIso(br) {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(br || '');
+  if (!match) return null;
+  const [, day, month, year] = match;
+  const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+  const valid = parsed.getFullYear() === Number(year) && parsed.getMonth() === Number(month) - 1 && parsed.getDate() === Number(day);
+  return valid ? `${year}-${month}-${day}` : null;
+}
+
 function formatDate(date) {
   if (!date) return 'Não informada';
   const parsed = new Date(`${date}T00:00:00`);
@@ -334,9 +354,11 @@ function App() {
   async function savePerson(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const dateBirth = brToIso(form.get('date_birth'));
+    if (!dateBirth) { setToast('Informe uma data de nascimento válida no formato dd/mm/aaaa.'); return; }
     const payload = {
       name: form.get('name').trim(),
-      date_birth: form.get('date_birth'),
+      date_birth: dateBirth,
       wanted: form.get('wanted') === 'on',
       reason: form.get('reason').trim() || null,
     };
@@ -348,7 +370,7 @@ function App() {
       const detection = personModal.detection;
       setPersonModal(null);
       if (!existing && detection) {
-        await attachEmbedding(saved.id, detection, 'frontal');
+        await attachEmbedding(saved.id, detection, form.get('angle') || 'frontal');
         return;
       }
       setToast(existing ? 'Cadastro atualizado.' : 'Pessoa cadastrada.');
@@ -499,8 +521,9 @@ function App() {
 
     {personModal && <Modal title={personModal.person ? 'Editar pessoa' : personModal.detection ? 'Cadastrar pessoa e atrelar embedding' : 'Cadastrar pessoa'} onClose={() => setPersonModal(null)}><form className="form-content" onSubmit={savePerson}>
       <label>Nome completo<input name="name" required maxLength="100" defaultValue={personModal.person?.name ?? ''} placeholder="Nome e sobrenome" /></label>
-      <label>Data de nascimento<input name="date_birth" type="date" required defaultValue={personModal.person?.date_birth ?? ''} /></label>
+      <label>Data de nascimento<input name="date_birth" required inputMode="numeric" maxLength="10" placeholder="dd/mm/aaaa" pattern="\d{2}/\d{2}/\d{4}" title="Use o formato dd/mm/aaaa" defaultValue={isoToBr(personModal.person?.date_birth)} onInput={(event) => { event.target.value = maskDate(event.target.value); }} /></label>
       <label className="toggle-field"><span><strong>Procurado pela justiça</strong><small>Marque se houver alerta ativo.</small></span><input name="wanted" type="checkbox" defaultChecked={personModal.person?.wanted ?? false} /></label>
+      {personModal.detection && <label>Ângulo da embedding<input name="angle" required maxLength="20" defaultValue="frontal" placeholder="Ex.: frontal, diagonal" /></label>}
       <label>Motivo do alerta<textarea name="reason" maxLength="200" rows="3" defaultValue={personModal.person?.reason ?? ''} placeholder="Motivo (opcional)" /></label>
       <div className="modal-actions"><button className="button button-quiet" type="button" onClick={() => setPersonModal(null)}>Cancelar</button><button className="button button-accent" type="submit"><Check size={16} /> Salvar cadastro</button></div>
     </form></Modal>}
