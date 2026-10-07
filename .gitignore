@@ -17,3 +17,4 @@ npm-debug.log*
 
 # ChromaDB local (muda a cada execução)
 raspberry/src/data/chroma/
+raspberry/src/data/vision_face.db*
