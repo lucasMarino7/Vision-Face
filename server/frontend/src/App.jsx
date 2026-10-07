@@ -188,7 +188,10 @@ function App() {
       const context = canvas.getContext('2d');
       const width = video.videoWidth;
       const height = video.videoHeight;
-      if (width && height) {
+      if (!width || !height) {
+        // sem vídeo (desconectado): limpa qualquer box que tenha ficado no canvas
+        context.clearRect(0, 0, canvas.width, canvas.height);
+      } else {
         if (canvas.width !== width || canvas.height !== height) {
           canvas.width = width;
           canvas.height = height;
@@ -237,6 +240,8 @@ function App() {
       setCameraOnline(false);
       setFps(null);
       setSync(null);
+      setLiveFaces([]);
+      facesRef.current = { faces: [], at: 0 };
       return undefined;
     }
     let retryTimer;
@@ -435,13 +440,13 @@ function App() {
           <div className="connection-icon"><Radio size={18} /></div>
           <label htmlFor="raspberry-url"><span>ENDPOINT DA RASPBERRY</span><input id="raspberry-url" value={raspberryUrl} onChange={(event) => setRaspberryUrl(event.target.value)} placeholder={WS_DEFAULT || 'ws://192.168.1.20:8765'} /></label>
           {connectionEnabled
-            ? <button className="button button-quiet" type="button" onClick={() => setConnectionEnabled(false)}><WifiOff size={16} /> Desconectar</button>
-            : <button className="button button-dark" type="submit"><Wifi size={16} /> Conectar</button>}
+            ? <button key="disconnect" className="button button-quiet" type="button" onClick={() => setConnectionEnabled(false)}><WifiOff size={16} /> Desconectar</button>
+            : <button key="connect" className="button button-dark" type="submit"><Wifi size={16} /> Conectar</button>}
           {socketError && <span className="connection-error"><AlertTriangle size={14} />{socketError}</span>}
         </form>
         <div className="live-grid">
           <section className="camera-panel">
-            <header className="panel-header"><div><span className="eyebrow">CÂMERA 01 <span className="eyebrow-divider">/</span> ENTRADA PRINCIPAL</span><h2>Feed de reconhecimento</h2></div><span className={`live-indicator ${cameraOnline ? 'is-live' : ''}`}><span />{cameraOnline ? 'AO VIVO' : 'SEM SINAL'}</span></header>
+            <header className="panel-header"><div><span className="eyebrow">CÂMERA RASP</span><h2>Stream de reconhecimento</h2></div><span className={`live-indicator ${cameraOnline ? 'is-live' : ''}`}><span />{cameraOnline ? 'AO VIVO' : 'SEM SINAL'}</span></header>
             <div className={`video-stage ${cameraOnline ? 'has-video' : ''}`}>
               <video ref={videoRef} autoPlay playsInline muted />
               <canvas ref={canvasRef} />
@@ -460,8 +465,7 @@ function App() {
                 <time>{detection.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</time>
               </article>) }
             </div>
-            <footer className="events-footer"><span><Activity size={14} /> Rostos visíveis agora</span></footer>
-          </section>
+            </section>
         </div>
         </section> : page === 'people' ? <section className="people-page">
         <div className="people-toolbar"><div className="people-summary"><span className="summary-number">{people.length.toString().padStart(2, '0')}</span><span>REGISTROS NO SISTEMA</span></div><div className="people-actions"><label className="search-field"><Search size={16} /><input placeholder="Buscar por nome ou ID" value={search} onChange={(event) => setSearch(event.target.value)} /></label><div className="filter-wrap"><select value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filtrar pessoas"><option value="all">Todos os registros</option><option value="wanted">Procurados</option><option value="regular">Demais pessoas</option></select><ChevronDown size={14} /></div><button className="button button-accent" onClick={() => setPersonModal({ person: null })}><Plus size={17} /> Nova pessoa</button></div></div>
