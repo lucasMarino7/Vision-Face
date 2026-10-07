@@ -14,3 +14,6 @@ server/frontend/.vite/
 server/frontend/coverage/
 server/frontend/npm-debug.log*
 npm-debug.log*
+
+# ChromaDB local (muda a cada execução)
+raspberry/src/data/chroma/
