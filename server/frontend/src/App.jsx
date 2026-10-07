@@ -63,6 +63,9 @@ function normalizeDetection(message) {
     recognized: message.recognized ?? Boolean(message.person),
     person_id: data.id ?? data.person_id ?? null,
     model: message.model,
+    similarity: typeof message.similarity === 'number' ? message.similarity : null,
+    embedding_id: message.embedding_id ?? null,
+    angle: message.angle || null,
     name: message.recognized === false || !message.person ? null : (data.name || 'Pessoa identificada'),
     date_birth: data.date_birth,
     age: data.age ?? ageFromDate(data.date_birth),
@@ -77,6 +80,14 @@ function normalizeDetection(message) {
     },
     timestamp: new Date(),
   };
+}
+
+// ângulo da embedding cadastrada que gerou o reconhecimento (enviado pela Raspberry;
+// para vetores sincronizados antes dessa informação existir, busca na lista da API)
+function matchedAngle(detection, people) {
+  if (detection.angle) return detection.angle;
+  const person = people.find((item) => item.id === detection.person_id);
+  return person?.embeddings?.find((item) => item.id === detection.embedding_id)?.angle ?? null;
 }
 
 function syncLabel(sync) {
@@ -230,7 +241,7 @@ function App() {
           context.strokeStyle = detection.wanted ? '#f26b52' : '#b9ed63';
           context.lineWidth = Math.max(2, width / 500);
           context.strokeRect(left, top, rectWidth, rectHeight);
-          const label = detection.name || 'Não reconhecida';
+          const label = `${detection.name || 'Não reconhecida'}${detection.similarity != null ? ` · ${detection.similarity.toFixed(0)}%` : ''}`;
           context.font = `600 ${Math.max(14, width / 75)}px sans-serif`;
           const labelWidth = context.measureText(label).width + 18;
           context.fillStyle = detection.wanted ? '#f26b52' : '#b9ed63';
@@ -483,7 +494,7 @@ function App() {
             <div className="detections-list">
               {liveFaces.length === 0 ? <div className="empty-detections"><div className="empty-icon"><Fingerprint size={22} /></div><strong>Nenhum rosto na câmera</strong><p>Os rostos visíveis agora na câmera serão listados aqui.</p></div> : liveFaces.map((detection, index) => <article className={`detection-item ${detection.wanted ? 'wanted-item' : ''}`} key={index}>
                 <div className="detection-avatar">{detection.name ? <UserRound size={17} /> : <CircleHelp size={18} />}</div>
-                <div className="detection-main"><strong>{detection.name || 'Pessoa não reconhecida'}</strong><span>{detection.age != null ? `${detection.age} anos` : 'Idade não informada'}</span>{detection.date_birth && <span>Nascimento: {formatDate(detection.date_birth)}</span>}{detection.wanted && <span className="wanted-tag"><ShieldAlert size={12} /> PROCURADO</span>}{detection.wanted && detection.reason && <p className="wanted-reason">{detection.reason}</p>}{!detection.recognized && Array.isArray(detection.embedding) && <button className="button button-accent" type="button" onClick={() => setAssignModal({ detection })}><Plus size={14} /> Adicionar</button>}{Array.isArray(detection.embedding) && <details className="detection-embedding"><summary>Embedding facial ({detection.embedding.length})</summary><code>{JSON.stringify(detection.embedding)}</code></details>}</div>
+                <div className="detection-main"><strong>{detection.name || 'Pessoa não reconhecida'}</strong><span>{detection.age != null ? `${detection.age} anos` : 'Idade não informada'}</span>{detection.similarity != null && <span className="similarity-line" title="Similaridade de cosseno com a embedding cadastrada mais próxima. Não é uma probabilidade calibrada de acerto.">{detection.recognized ? 'Similaridade' : 'Melhor correspondência'}: <strong>{detection.similarity.toFixed(1)}%</strong></span>}{detection.recognized && <span>Ângulo reconhecido: {matchedAngle(detection, people) ?? 'não informado'}</span>}{detection.date_birth && <span>Nascimento: {formatDate(detection.date_birth)}</span>}{detection.wanted && <span className="wanted-tag"><ShieldAlert size={12} /> PROCURADO</span>}{detection.wanted && detection.reason && <p className="wanted-reason">{detection.reason}</p>}{Array.isArray(detection.embedding) && <button className="button button-accent" type="button" onClick={() => setAssignModal({ detection })}><Plus size={14} /> {detection.recognized ? 'Adicionar a esta pessoa' : 'Adicionar'}</button>}{Array.isArray(detection.embedding) && <details className="detection-embedding"><summary>Embedding facial ({detection.embedding.length})</summary><code>{JSON.stringify(detection.embedding)}</code></details>}</div>
                 <time>{detection.timestamp.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</time>
               </article>) }
             </div>
@@ -527,18 +538,18 @@ function App() {
       <label>Motivo do alerta<textarea name="reason" maxLength="200" rows="3" defaultValue={personModal.person?.reason ?? ''} placeholder="Motivo (opcional)" /></label>
       <div className="modal-actions"><button className="button button-quiet" type="button" onClick={() => setPersonModal(null)}>Cancelar</button><button className="button button-accent" type="submit"><Check size={16} /> Salvar cadastro</button></div>
     </form></Modal>}
-    {assignModal && <Modal title="Atrelar embedding a uma pessoa" onClose={() => setAssignModal(null)}><form className="form-content" onSubmit={(event) => {
+    {assignModal && <Modal title={assignModal.detection.recognized ? `Adicionar embedding a ${assignModal.detection.name}` : 'Atrelar embedding a uma pessoa'} onClose={() => setAssignModal(null)}><form className="form-content" onSubmit={(event) => {
       event.preventDefault();
       const form = new FormData(event.currentTarget);
       attachEmbedding(Number(form.get('person_id')), assignModal.detection, form.get('angle'));
     }}>
-      <label>Pessoa cadastrada<select name="person_id" required defaultValue="">
+      <label>Pessoa cadastrada<select name="person_id" required defaultValue={assignModal.detection.person_id ?? ''}>
         <option value="" disabled>Selecione uma pessoa</option>
         {people.map((person) => <option key={person.id} value={person.id}>{person.name} (#{person.id})</option>)}
       </select></label>
       <label>Ângulo<input name="angle" required maxLength="20" defaultValue="frontal" /></label>
       <div className="modal-actions">
-        <button className="button button-quiet" type="button" onClick={() => { setPersonModal({ person: null, detection: assignModal.detection }); setAssignModal(null); }}><Plus size={16} /> Cadastrar nova pessoa</button>
+        {!assignModal.detection.recognized && <button className="button button-quiet" type="button" onClick={() => { setPersonModal({ person: null, detection: assignModal.detection }); setAssignModal(null); }}><Plus size={16} /> Cadastrar nova pessoa</button>}
         <button className="button button-accent" type="submit" disabled={!people.length}><Check size={16} /> Atrelar</button>
       </div>
     </form></Modal>}

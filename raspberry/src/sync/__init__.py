@@ -385,7 +385,13 @@ class Synchronizer:
             logger.error("Embedding %d must contain exactly 512 numeric values.", embedding_id)
             return
 
-        add_embedding(str(embedding_id), vector, person_id)
+        angle = data.get("angle")
+        add_embedding(
+            str(embedding_id),
+            vector,
+            person_id,
+            angle if isinstance(angle, str) else None,
+        )
 
 
 def run_sync_loop(stop_event: Event, interval_seconds: float = 30) -> None:

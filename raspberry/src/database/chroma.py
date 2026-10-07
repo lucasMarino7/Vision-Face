@@ -26,7 +26,8 @@ chroma_lock = Lock()
 def add_embedding(
     embedding_id: str,
     embedding: Sequence[float],
-    person_id: int
+    person_id: int,
+    angle: str | None = None,
 ):
     normalized_embedding = _normalize_embedding(embedding)
 
@@ -36,7 +37,10 @@ def add_embedding(
             embeddings=[normalized_embedding],
             metadatas=[
                 {
-                    "person_id": person_id
+                    "person_id": person_id,
+                    "embedding_id": int(embedding_id),
+                    # Chroma não aceita None em metadados
+                    "angle": angle or "",
                 }
             ],
         )

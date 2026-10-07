@@ -258,6 +258,12 @@ def _process_face(
         "model": model_name,
         "box": {"x": x1, "y": y1, "width": x2 - x1, "height": y2 - y1},
         "distance": nearest["distance"] if nearest is not None else None,
+        # similaridade de cosseno (1 - distância) em %, da embedding cadastrada mais próxima;
+        # não é uma probabilidade calibrada de acerto
+        "similarity": _similarity_percent(nearest),
+        # embedding cadastrada que gerou a correspondência (somente quando reconhecido)
+        "embedding_id": nearest["embedding_id"] if recognized else None,
+        "angle": nearest["angle"] if recognized else None,
     }
 
 
@@ -301,13 +307,22 @@ def _find_nearest_person(
     metric = (face_collection.metadata or {}).get("hnsw:space", "l2")
     default_threshold = 0.4 if metric == "cosine" else 0.9
     threshold = float(configured_threshold) if configured_threshold else default_threshold
+    embedding_id = ids[0][0]
     return {
         "person_id": metadata["person_id"],
+        "embedding_id": int(embedding_id) if str(embedding_id).isdigit() else None,
+        "angle": metadata.get("angle") or None,
         "distance": float(distance),
         "metric": metric,
         "threshold": threshold,
         "accepted": distance <= threshold,
     }
+
+
+def _similarity_percent(nearest: dict[str, Any] | None) -> float | None:
+    if nearest is None or nearest["metric"] != "cosine":
+        return None
+    return round(max(0.0, min(1.0, 1.0 - nearest["distance"])) * 100, 1)
 
 
 def _format_embedding(embedding, include_full: bool) -> str:

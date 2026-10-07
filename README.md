@@ -316,11 +316,15 @@ Mensagens enviadas **pela Raspberry**:
 {"type":"faces","frame_size":{"width":1280,"height":720},"faces":[
   {"recognized":true,"person":{"id":1,"name":"Nome","date_birth":"1990-01-01","wanted":false,"reason":null},
    "embedding":[0.01,"... 512 valores"],"model":"buffalo_l",
-   "box":{"x":120,"y":60,"width":180,"height":220},"distance":0.21}
+   "box":{"x":120,"y":60,"width":180,"height":220},"distance":0.21,
+   "similarity":79.0,"embedding_id":12,"angle":"diagonal"}
 ]}
 ```
 
-Para um rosto não reconhecido, `recognized` é `false` e `person` é `null`. Mensagens enviadas **pelo navegador**: `answer` (resposta WebRTC) e `ice-candidate`.
+Para um rosto não reconhecido, `recognized` é `false` e `person` é `null`.
+
+- `similarity`: similaridade de cosseno (`1 − distance`) em %, entre o rosto da câmera e a embedding cadastrada **mais próxima**. Indica o nível de confiança do reconhecimento, mas **não é uma probabilidade calibrada de acerto**. Também é enviada para rostos não reconhecidos (melhor correspondência abaixo do limite).
+- `embedding_id` e `angle`: embedding cadastrada que gerou o reconhecimento e o ângulo dela (`null` quando não reconhecido). O ângulo é gravado nos metadados do ChromaDB durante a sincronização; embeddings sincronizadas antes dessa versão não têm o ângulo na Raspberry, então o painel o busca pela API usando o `embedding_id`. Mensagens enviadas **pelo navegador**: `answer` (resposta WebRTC) e `ice-candidate`.
 
 Fluxo WebRTC: o navegador abre o WebSocket, a Raspberry envia a `offer`, o navegador responde com `answer`, e os dois trocam `ice-candidate`. O vídeo passa a fluir direto por WebRTC (usa o STUN público do Google para descobrir caminhos de rede).
 
