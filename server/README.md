@@ -1,6 +1,6 @@
 # Vision Face — servidor
 
-Backend Flask, banco PostgreSQL (pgvector), Redis e painel React. A documentação completa (arquitetura, variáveis de ambiente e passo a passo do Docker) está no [README da raiz](../README.md#7-rodando-o-servidor-com-docker-passo-a-passo).
+Backend Flask, banco PostgreSQL (pgvector) e painel React. A documentação completa (arquitetura, variáveis de ambiente e passo a passo do Docker) está no [README da raiz](../README.md#7-rodando-o-servidor-com-docker-passo-a-passo).
 
 Resumo:
 

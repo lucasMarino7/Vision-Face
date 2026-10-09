@@ -55,10 +55,8 @@ flowchart LR
         FRONT["Frontend React<br/>(nginx, porta 3000)"]
         BACK["Backend Flask + Gunicorn<br/>(porta 8000)"]
         PG[("PostgreSQL + pgvector")]
-        REDIS[("Redis")]
         FRONT -- "/api (proxy)" --> BACK
         BACK --> PG
-        BACK --> REDIS
     end
 
     SYNC -- "HTTP: /api/sync/status, /api/sync/delta,<br/>/api/person, /api/embedding" --> BACK
@@ -95,13 +93,12 @@ Pontos importantes:
 
 | Tecnologia | Função no projeto |
 | --- | --- |
-| **Docker Compose** | Sobe todo o servidor (Postgres, Redis, backend, frontend) com um comando. |
+| **Docker Compose** | Sobe todo o servidor (Postgres, backend, frontend) com um comando. |
 | **Flask + Flask-RESTX** | API REST e documentação Swagger (`/api/docs`). |
 | **Gunicorn** | Servidor de produção do Flask dentro do container. |
 | **PostgreSQL + pgvector** | Banco principal. A extensão `pgvector` permite guardar a embedding como coluna vetorial de 512 dimensões. |
 | **SQLAlchemy + Flask-Migrate (Alembic)** | Modelos e migrations automáticas: o container aplica `flask db upgrade` ao iniciar. |
 | **Marshmallow** | Serialização e validação dos dados da API. |
-| **Redis** | Provisionado no Compose para uso futuro do backend (cache/sessões). A conexão está comentada em `server/backend/server/instance.py`, mas `REDIS_HOST` e `REDIS_PORT` continuam obrigatórios na validação de configuração. |
 | **React 19 + Vite** | Painel web: monitoramento ao vivo e CRUD de pessoas e embeddings. |
 | **nginx** | Serve o build do frontend e faz proxy de `/api/` para o backend (evita CORS). |
 | **WebRTC / WebSocket (API do navegador)** | Recebe vídeo e dados direto da Raspberry. |
@@ -117,7 +114,7 @@ Cada alteração no backend (pessoa ou embedding inserida, alterada ou removida)
 ```
 Vision-Face/
 ├── .env.example              # modelo de todas as variáveis de ambiente
-├── docker-compose.yml        # postgres, redis, backend, frontend
+├── docker-compose.yml        # postgres, backend, frontend
 ├── README.md                 # este arquivo
 ├── raspberry/
 │   ├── readme.md             # guia completo de montagem e execução da Raspberry
@@ -186,7 +183,6 @@ O `.env` não vai para o Git. Variáveis já definidas no ambiente têm priorida
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Postgres, backend | Banco e credenciais. **Troque a senha.** |
 | `POSTGRES_PORT` | Docker | Porta publicada em `127.0.0.1` para acessar o banco com pgAdmin (padrão 5432). |
 | `DATABASE_URL` | Backend fora do Docker | URI do Postgres usada ao rodar o Flask localmente. No Docker o compose monta a URI com o host `postgres`. |
-| `REDIS_HOST`, `REDIS_PORT` | Backend | Redis (`redis` / `6379` no Docker). |
 | `SECRET_KEY`, `SECURITY_PASSWORD_SALT` | Backend | Segredos do Flask. Use valores aleatórios longos. |
 | `BACKEND_IP`, `BACKEND_PORT` | Backend, Docker | Interface e porta publicada da API (padrão `0.0.0.0` e `8000`). |
 | `ENV` | Backend | `production` usa `DATABASE_URL` (Postgres). Qualquer outro valor usa SQLite local. |
@@ -230,7 +226,7 @@ Dois endereços diferentes, não confunda:
    ```bash
    docker compose up --build -d
    ```
-   Ordem de inicialização: Postgres e Redis ficam saudáveis, o backend aplica as migrations e inicia o Gunicorn, e só então o frontend sobe.
+   Ordem de inicialização: o Postgres fica saudável, o backend aplica as migrations e inicia o Gunicorn, e só então o frontend sobe.
 5. **Acompanhe**
    ```bash
    docker compose ps
@@ -342,7 +338,7 @@ npm run dev          # http://localhost:5173, encaminha /api para http://localho
 
 O proxy usa `http://localhost:<BACKEND_PORT>` (lido do `.env` da raiz; padrão 8000).
 
-**Backend** (Python 3.13): suba o Postgres e o Redis pelo Docker (`docker compose up -d postgres redis`), instale `server/backend/requirements.txt` em um ambiente virtual e rode a partir da pasta `server`:
+**Backend** (Python 3.13): suba o Postgres pelo Docker (`docker compose up -d postgres`), instale `server/backend/requirements.txt` em um ambiente virtual e rode a partir da pasta `server`:
 
 ```bash
 flask --app backend.main:app db upgrade

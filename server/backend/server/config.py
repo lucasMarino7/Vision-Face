@@ -19,7 +19,7 @@ class Config(object):
         # Verifica se todas as variáveis de ambiente necessárias estão definidas
         required_vars = ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD",
                          "DATABASE_URL", "SECRET_KEY", "SECURITY_PASSWORD_SALT",
-                         "BACKEND_IP", "BACKEND_PORT", "REDIS_HOST", "REDIS_PORT"]
+                         "BACKEND_IP", "BACKEND_PORT"]
         for var in required_vars:
             if not os.getenv(var):
                 raise ValueError(f"Variável de ambiente não definida: {var}")
@@ -37,8 +37,6 @@ class Config(object):
     SECURITY_PASSWORD_SALT = os.getenv(
         "SECURITY_PASSWORD_SALT", secrets.token_hex())  # para o bycrpt
 
-    REDIS_PORT = os.getenv("REDIS_PORT")
-    REDIS_HOST = os.getenv("REDIS_HOST")
 
 
 class ProductionConfig(Config):
