@@ -18,7 +18,7 @@ class FaceEngine:
     def __init__(
         self,
         model_name: str = "buffalo_l",
-        detection_size: tuple[int, int] = (640, 640),
+        detection_size: tuple[int, int] = (320, 320),
     ) -> None:
         from insightface.app import FaceAnalysis
 
@@ -26,6 +26,7 @@ class FaceEngine:
         logger.info("Loading InsightFace model %s.", model_name)
         self._app = FaceAnalysis(
             name=model_name,
+             allowed_modules=["detection", "recognition"],
             providers=["CPUExecutionProvider"],
         )
         self._app.prepare(ctx_id=-1, det_size=detection_size)

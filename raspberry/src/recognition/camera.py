@@ -2,7 +2,7 @@ import time
 
 
 class Camera:
-    def __init__(self, size: tuple[int, int] = (1280, 720)) -> None:
+    def __init__(self, size: tuple[int, int] = (640, 480)) -> None:
         from picamera2 import Picamera2
 
         self._camera = Picamera2()
