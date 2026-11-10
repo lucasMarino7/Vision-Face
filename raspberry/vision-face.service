@@ -1,0 +1,18 @@
+[Unit]
+Description=Vision Face - reconhecimento facial (Raspberry)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lucas
+Group=lucas
+SupplementaryGroups=video
+WorkingDirectory=/home/lucas/Projetos/Vision-Face/raspberry/src
+# chamar o python da venv direto já usa as bibliotecas dela, sem precisar "ativar" a venv
+ExecStart=/home/lucas/Projetos/Vision-Face/raspberry/.venv/bin/python -u main.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
