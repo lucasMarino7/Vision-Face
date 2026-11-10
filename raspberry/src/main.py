@@ -31,11 +31,14 @@ from pathlib import Path
 from threading import Event, Thread
 
 from dotenv import load_dotenv
+from sqlalchemy import func, select
 
 # .env único na raiz do monorepo (parents[2]); variáveis já definidas no ambiente têm prioridade
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 from database import init_database
+from database.database import SessionLocal
+from database.models import SyncChange
 from network_monitor import run_network_monitor
 from recognition.runner import run_recognition_loop
 from sync import run_sync_loop
@@ -60,6 +63,10 @@ if __name__ == "__main__":
     )
 
     init_database()
+    with SessionLocal() as session:
+        local_version = session.scalar(select(func.max(SyncChange.version))) or 0
+    logging.info("Current local sync version in SQLite: %d", local_version)
+
     stop_event = Event()
     sync_thread = Thread(
         target=run_sync_loop,
