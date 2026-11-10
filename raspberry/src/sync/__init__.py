@@ -386,11 +386,13 @@ class Synchronizer:
             return
 
         angle = data.get("angle")
+        model = data.get("model")
         add_embedding(
             str(embedding_id),
             vector,
             person_id,
             angle if isinstance(angle, str) else None,
+            model if isinstance(model, str) and model.strip() else None,
         )
 
 

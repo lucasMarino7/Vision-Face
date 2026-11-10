@@ -37,6 +37,7 @@ from sqlalchemy import func, select
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 from database import init_database
+from database.chroma import backfill_embedding_families
 from database.database import SessionLocal
 from database.models import SyncChange
 from network_monitor import run_network_monitor
@@ -63,6 +64,9 @@ if __name__ == "__main__":
     )
 
     init_database()
+    marked = backfill_embedding_families()
+    if marked:
+        logging.info("Marked %d existing Chroma embeddings as buffalo_l.", marked)
     with SessionLocal() as session:
         local_version = session.scalar(select(func.max(SyncChange.version))) or 0
     logging.info("Current local sync version in SQLite: %d", local_version)

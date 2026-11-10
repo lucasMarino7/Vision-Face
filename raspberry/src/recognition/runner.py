@@ -203,6 +203,7 @@ def _process_face(
         nearest = _find_nearest_person(
             embedding,
             configured_threshold=configured_threshold,
+            model_name=model_name,
         )
     except Exception:
         logger.exception(
@@ -279,8 +280,9 @@ def _close_camera(camera) -> None:
 def _find_nearest_person(
     embedding,
     configured_threshold: str | None,
+    model_name: str = "buffalo_l",
 ) -> dict[str, Any] | None:
-    result = search_embedding(embedding, n_results=1)
+    result = search_embedding(embedding, n_results=1, model=model_name)
     ids = result.get("ids", [[]])
     if not ids or not ids[0]:
         return None
