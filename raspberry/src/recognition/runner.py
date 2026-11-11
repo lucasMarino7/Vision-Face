@@ -78,7 +78,7 @@ def run_recognition_loop(
 
         if camera is None:
             try:
-                camera = Camera(size=_camera_size())
+                camera = Camera()
                 camera.start()
                 _set_camera_online(websocket_server, True)
             except Exception:
@@ -401,19 +401,6 @@ def _environment_float(
         logger.error("Invalid %s=%r; using default %s.", name, raw_value, default)
         return default
     return value
-
-
-def _camera_size() -> tuple[int, int]:
-    # resolução maior melhora a imagem do stream no frontend (custa mais CPU/FPS)
-    try:
-        width = int(os.getenv("CAMERA_WIDTH", "1280"))
-        height = int(os.getenv("CAMERA_HEIGHT", "720"))
-        if width <= 0 or height <= 0:
-            raise ValueError
-        return width, height
-    except ValueError:
-        logger.error("Invalid CAMERA_WIDTH/CAMERA_HEIGHT; using 1280x720.")
-        return 1280, 720
 
 
 def _set_camera_online(websocket_server, online: bool) -> None:

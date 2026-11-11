@@ -46,31 +46,6 @@ from sync import run_sync_loop
 from ws_server import DetectionWebSocketServer
 
 
-def _configure_video_bitrate() -> None:
-    # o aiortc limita o bitrate por constantes nos módulos dos codecs (padrão ~0.5-1 Mbps),
-    # o que deixa o stream com blocos/artefatos; aqui os limites são aumentados.
-    try:
-        max_kbps = int(os.getenv("VIDEO_MAX_BITRATE_KBPS", "6000"))
-        if max_kbps <= 0:
-            raise ValueError
-    except ValueError:
-        logging.error("Invalid VIDEO_MAX_BITRATE_KBPS; using 6000.")
-        max_kbps = 6000
-    maximum = max_kbps * 1000
-    default = maximum // 2
-    minimum = maximum // 4
-    try:
-        from aiortc.codecs import h264, vpx
-
-        for codec in (h264, vpx):
-            codec.MAX_BITRATE = maximum
-            codec.DEFAULT_BITRATE = default
-            codec.MIN_BITRATE = minimum
-        logging.info("WebRTC video bitrate limits: %d-%d kbps.", minimum // 1000, max_kbps)
-    except Exception:
-        logging.exception("Could not configure WebRTC video bitrate.")
-
-
 def _configured_port() -> int:
     try:
         port = int(os.getenv("WEBSOCKET_PORT", "8765"))
@@ -88,7 +63,6 @@ if __name__ == "__main__":
         format="%(asctime)s %(levelname)s %(threadName)s %(message)s",
     )
 
-    _configure_video_bitrate()
     init_database()
     marked = backfill_embedding_families()
     if marked:
