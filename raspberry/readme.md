@@ -29,18 +29,20 @@ Para entender o projeto como um todo (servidor, painel, arquitetura), leia prime
 
 ### Utilizados neste projeto
 
-| Item | Observação |
-| --- | --- |
-| **Raspberry Pi 5 — 8 GB de RAM** | O reconhecimento facial roda na CPU; os 8 GB dão folga para o modelo InsightFace, o ChromaDB e o vídeo. |
-| **Câmera 5 MP v1.3 (sensor OV5647)** | Câmera CSI com cabo flat de 15 pinos. |
-| **Cabo adaptador flat para a Raspberry Pi 5** | A Pi 5 usa conectores de câmera menores (22 pinos, passo de 0,5 mm). O cabo adaptador converte do conector de 15 pinos da câmera para o de 22 pinos da Pi 5. |
-| **Fonte oficial 27 W (USB-C, 5,1 V / 5 A)** | A Pi 5 precisa de 5 A para entregar potência total. Fontes mais fracas causam avisos de subtensão e instabilidade. |
+| Item | Custo (aprox.) | Observação |
+| --- | --- | --- |
+| **Raspberry Pi 5 — 8 GB de RAM** | R$ 1.200 | O reconhecimento facial roda na CPU; os 8 GB dão folga para o modelo InsightFace, o ChromaDB e o vídeo. |
+| [**Câmera 5 MP v1.3 (sensor OV5647)**](https://www.mercadolivre.com.br/camera-raspberry-pi-5-v13-5mp-zero-w-cabo-ffc-hbv-15-vias/p/MLB69798050) | R$ 45 | Câmera CSI com cabo flat de 15 pinos. |
+| [**Cabo adaptador flat para a Raspberry Pi 5**](https://www.usinainfo.com.br/acessorios-raspberry-pi/cabo-adaptador-para-camera-ffc-raspberry-pi-5-zero-zero-w-e-zero-2w-30cm-9000.html) | R$ 21 | A Pi 5 usa conectores de câmera menores (22 pinos, passo de 0,5 mm). O cabo adaptador converte do conector de 15 pinos da câmera para o de 22 pinos da Pi 5. |
+| [**Fonte oficial 27 W (USB-C, 5,1 V / 5 A)**](https://www.mercadolivre.com.br/fonte-raspberry-pi-modelo-27w-usb-c-tensao-51v-para-pi5/p/MLB39019197) | R$ 100 | A Pi 5 precisa de 5 A para entregar potência total. Fontes mais fracas causam avisos de subtensão e instabilidade. |
+| [**Cartão microSD SanDisk Extreme 64 GB (A2, U3)**](https://share.google/s6EArqJsy2UVtANk7) | R$ 150 | O sistema, o modelo de IA (~300 MB), o ChromaDB e o SQLite ficam no cartão. |
+| **Total** | **R$ 1.516** | |
 
 ### Itens complementares necessários
 
 | Item | Observação |
 | --- | --- |
-| **Cartão microSD (mínimo 32 GB, classe A1/A2) e leitor** | O sistema, o modelo de IA (~300 MB), o ChromaDB e o SQLite ficam no cartão. |
+| **Leitor de cartão microSD** | Para gravar o sistema no cartão pelo computador (etapa 4). |
 | **Rede Wi-Fi** (ou cabo de rede) | A Raspberry e o computador do operador precisam estar na mesma rede. |
 
 ### Recomendados (opcionais)
@@ -64,13 +66,13 @@ Para entender o projeto como um todo (servidor, painel, arquitetura), leia prime
 
 > **Faça sempre com a Raspberry desligada e sem a fonte conectada.**
 
-A Raspberry Pi 5 tem **dois** conectores de câmera/display, ao lado das portas micro-HDMI, identificados como **CAM/DISP 0** e **CAM/DISP 1**. Este projeto usa o **CAM/DISP 0**.
+A Raspberry Pi 5 tem **dois** conectores de câmera/display, ao lado das portas micro-HDMI, identificados como **CAM/DISP 0** e **CAM/DISP 1**. O projeto funciona em qualquer um dos dois, desde que **apenas uma câmera** esteja conectada: o sistema operacional atribui o ID 0 à primeira câmera detectada, e o projeto usa a câmera de ID 0.
 
 1. **Prepare o cabo adaptador.** Uma ponta do cabo tem o conector largo (15 pinos, para a câmera) e a outra o conector estreito (22 pinos, para a Pi 5).
 2. **Conecte na câmera (lado de 15 pinos):**
    - Levante com cuidado a trava plástica do conector da câmera (ela sobe poucos milímetros).
    - Insira o cabo reto até o fundo e empurre a trava de volta para baixo para prendê-lo.
-3. **Conecte na Raspberry Pi 5 (lado de 22 pinos), no CAM/DISP 0:**
+3. **Conecte na Raspberry Pi 5 (lado de 22 pinos), no CAM/DISP 0 ou 1:**
    - Levante a trava do conector. Ela é pequena; levante pelas bordas, sem forçar.
    - Insira o cabo reto até o fundo e baixe a trava.
 4. **Verifique:** o cabo deve estar reto, sem inclinação, e preso pelas duas travas. Os contatos metálicos do cabo precisam estar voltados para os contatos do conector. Se a câmera não for detectada na [etapa 7](#7-testando-a-câmera), desligue e inverta o lado do cabo, porque essa é a causa mais comum.
@@ -193,16 +195,6 @@ Instale as dependências:
 pip install -r raspberry/src/requirements.txt
 ```
 
-> O `requirements.txt` é um congelamento de todo o ambiente da Raspberry do desenvolvedor, incluindo pacotes que vêm do `apt` (como `python-apt`, `dbus-python`, `PyQt5`, `pycups`). Se o `pip` falhar em algum desses, instale apenas o que o projeto realmente usa, com as versões do arquivo:
->
-> ```bash
-> pip install insightface==2.0 onnxruntime==1.30.0 chromadb==1.5.9 aiortc==1.15.0 av==14.2.0 \
->   websockets==17.2 SQLAlchemy==2.1.3 requests==2.32.3 python-dotenv==1.2.4 \
->   numpy==2.2.4 opencv-python==5.0.0.93
-> ```
-
-A instalação pode levar vários minutos na Raspberry.
-
 ---
 
 ## 9. Configurando o `.env`
@@ -229,7 +221,7 @@ O que a Raspberry usa (o resto do arquivo é do servidor e pode ficar como está
 
 Salve no `nano` com `Ctrl+O`, `Enter`, e saia com `Ctrl+X`.
 
-**Antes de continuar, confirme que a Raspberry alcança o servidor** (o Docker do servidor precisa estar rodando — veja a [seção 7 do README principal](../README.md#7-rodando-o-servidor-com-docker-passo-a-passo)):
+**Antes de continuar, confirme que a Raspberry alcança o servidor** (o Docker do servidor precisa estar rodando — veja a [seção 8 do README principal](../README.md#8-rodando-o-servidor-com-docker)):
 
 ```bash
 curl http://192.168.15.50:8000/api/sync/status
@@ -266,7 +258,17 @@ Para parar: `Ctrl+C`.
 
 **Teste rápido só da câmera (opcional):** `python ../tests/camera_test.py` tira uma foto `testeCam.jpg` usando o Picamera2.
 
-**Dados locais:** o SQLite e o ChromaDB ficam em `raspberry/src/data/`. Para forçar uma ressincronização do zero, pare o programa e apague `raspberry/src/data/vision_face.db` e a pasta `raspberry/src/data/chroma/`; na próxima execução tudo é baixado do servidor de novo. Apague **os dois juntos**, nunca só um.
+**Dados locais:** o SQLite e o ChromaDB ficam em `raspberry/src/data/`. Para forçar uma ressincronização do zero, pare o programa e apague `raspberry/src/data/vision_face.db` e a pasta `raspberry/src/data/chroma/`; na próxima execução tudo é baixado do servidor de novo. Apague **os dois juntos**, nunca só um. A forma mais simples é o script `clear_data.py` (veja a seção abaixo).
+
+**Limpar os dados locais pela CLI** (os dados do servidor não são afetados; a próxima sincronização baixa tudo de novo):
+
+```bash
+cd ~/Projetos/Vision-Face/raspberry/src
+../.venv/bin/python clear_data.py              # os dois, pedindo confirmação
+../.venv/bin/python clear_data.py --chroma     # só o ChromaDB (embeddings)
+../.venv/bin/python clear_data.py --sqlite     # só o SQLite
+../.venv/bin/python clear_data.py --all --yes  # os dois, sem perguntar
+```
 
 ---
 
@@ -282,34 +284,12 @@ O navegador conecta **diretamente na Raspberry**, então o computador que abre o
 
 ## 12. Iniciar automaticamente no boot (systemd)
 
-Para o reconhecimento subir sozinho quando a Raspberry ligar:
+Para o reconhecimento subir sozinho quando a Raspberry ligar, use o arquivo [vision-face.service](vision-face.service) do repositório. Se o seu usuário ou o caminho do projeto forem diferentes de `lucas` e `/home/lucas/Projetos/Vision-Face`, ajuste-o antes (`nano ~/Projetos/Vision-Face/raspberry/vision-face.service`).
+
+Instale, ative e inicie:
 
 ```bash
-sudo nano /etc/systemd/system/vision-face.service
-```
-
-Conteúdo (ajuste `lucas` e o caminho se for diferente):
-
-```ini
-[Unit]
-Description=Vision Face - reconhecimento facial
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-User=lucas
-WorkingDirectory=/home/lucas/Projetos/Vision-Face/raspberry/src
-ExecStart=/home/lucas/Projetos/Vision-Face/raspberry/.venv/bin/python main.py
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Ative e inicie:
-
-```bash
+sudo cp ~/Projetos/Vision-Face/raspberry/vision-face.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now vision-face
 ```
@@ -349,22 +329,27 @@ sudo systemctl restart vision-face    # se estiver usando o systemd
 raspberry/src/
 ├── main.py              # ponto de entrada: sync (thread) + monitor de rede (thread) + reconhecimento
 ├── ws_server.py         # servidor WebSocket e sinalização WebRTC para o navegador
+├── clear_data.py        # CLI para limpar ChromaDB e/ou SQLite locais
 ├── network_monitor.py   # registra no log o estado do Wi-Fi e o endereço ws://IP:porta
 ├── recognition/
-│   ├── camera.py        # captura via Picamera2 (1280x720, RGB888)
+│   ├── camera.py        # captura via Picamera2 (640x480, RGB888)
 │   ├── face_engine.py   # InsightFace: detecção + embedding normalizada
 │   ├── runner.py        # loop principal: captura → reconhece → envia pelo WebSocket
 │   └── video_track.py   # track de vídeo WebRTC (até 20 FPS) com o último frame
 ├── sync/                # sincronização por delta com o backend + estado exposto ao painel
 ├── database/            # SQLite, ChromaDB e cache de pessoas em RAM
 └── requirements.txt
+
+raspberry/tests/         # camera_test.py e test_capture_embeddings/
+raspberry/vision-face.service   # serviço systemd
 ```
 
 ---
 
 ## 15. Ajustes do reconhecimento
 
-- **Modelo:** `buffalo_l` (nome com a letra "l"; `buffalo_1` não existe). O `det_size=(640, 640)` é a resolução de entrada do detector: o frame inteiro é redimensionado para ela, não é um recorte da imagem.
+- **Modelo:** `buffalo_l` (nome com a letra "l"; `buffalo_1` não existe). O `det_size=(320, 320)` (em `recognition/face_engine.py`) é a resolução de entrada do detector: o frame inteiro é redimensionado para ela (mantendo a proporção), não é um recorte. Só os módulos de detecção e reconhecimento são carregados, rodando na CPU. A câmera captura em 640×480 (`recognition/camera.py`); aumentar a resolução ou o `det_size` melhora rostos distantes, mas reduz o FPS.
+- **Trocar de modelo:** `INSIGHTFACE_MODEL` aceita `buffalo_l`, `buffalo_m`, `buffalo_s` e `buffalo_sc`. A busca só compara embeddings da mesma família de modelo (`buffalo_l`/`buffalo_m` e `buffalo_s`/`buffalo_sc`); ao trocar de família, as embeddings cadastradas precisam ser regeradas.
 - **Distância de cosseno:** o ChromaDB usa a métrica de cosseno. Distância menor significa rosto mais parecido. O padrão aceita até `0.4`. Ajuste `FACE_MATCH_DISTANCE_THRESHOLD` somente depois de avaliar embeddings reais: valores maiores reconhecem mais, mas aumentam o risco de confundir pessoas.
 - **Mais de um ângulo por pessoa:** cadastre embeddings de ângulos diferentes (frontal, diagonal) para melhorar a taxa de acerto.
 - **FPS:** o valor enviado ao painel é o do laço completo (captura + reconhecimento), então mostra a lentidão real. O vídeo WebRTC é limitado a 20 FPS, mas o reconhecimento na CPU da Pi costuma rodar abaixo disso.
@@ -372,18 +357,3 @@ raspberry/src/
 
 ---
 
-## 16. Problemas comuns
-
-| Sintoma | Causa provável e solução |
-| --- | --- |
-| `ssh: Could not resolve hostname pi5.local` | Use o IP da Raspberry (veja no roteador). Confirme que computador e Raspberry estão na mesma rede. |
-| `Permission denied` no SSH | Usuário ou senha diferentes dos definidos no Imager. Reconfigure regravando o cartão, se necessário. |
-| Ícone de raio/aviso de subtensão | Fonte inadequada. Use a fonte de 27 W e um cabo USB-C de boa qualidade. |
-| `no cameras available` | Cabo mal encaixado, invertido ou no conector errado (use o CAM/DISP 0). Desligue antes de mexer. |
-| `ModuleNotFoundError: picamera2` | O ambiente virtual foi criado sem `--system-site-packages` ou o `python3-picamera2` não foi instalado. Recrie a venv com a flag e rode `sudo apt install python3-picamera2`. |
-| `Camera startup failed` nos logs | A câmera está em uso por outro processo (`rpicam-*`, outra instância do `main.py` ou o serviço systemd). Pare o outro processo. |
-| `API_URL must be configured` | O `.env` não está na raiz do repositório ou falta `API_URL`. |
-| Log `Synchronization attempt ... failed` | A Raspberry não alcança o backend. Teste com `curl` (etapa 9) e confira o firewall do servidor. |
-| Painel conecta mas o vídeo não aparece | Reconecte. Veja no log a mensagem de negociação do WebRTC. Computador e Raspberry precisam ter rota direta de rede. |
-| `Wi-Fi is up but has no IPv4 address yet` | O DHCP ainda não entregou o IP; aguarde alguns segundos. |
-| Raspberry esquenta e o FPS cai | Use cooler/case com ventilação. O reconhecimento mantém a CPU em carga contínua. |
